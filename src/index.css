@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens for the "Velvet Nocturne" theme — see docs/design-tokens.md
+ * for the full rationale. This is a deliberately single, committed visual
+ * identity (plum/near-black + warm gold, a late-night listening room) —
+ * not a light theme with a dark-mode override, so there is intentionally
+ * no `prefers-color-scheme` branch here. Keep it that way unless a future
+ * request specifically asks for a second theme.
+ */
+@theme {
+  --color-cozy-bg: #211320;
+  --color-cozy-surface: #2b1a29;
+  --color-cozy-surface-2: #34202f;
+  --color-cozy-wood: #3c2320;
+  --color-cozy-wood-dark: #190f10;
+  --color-cozy-brass: #c99a52;
+  --color-cozy-brass-light: #e9c684;
+  --color-cozy-ink: #f1e2ea;
+  --color-cozy-ink-muted: #b199ac;
+  --color-cozy-accent: #d9663f;
+  /* Text/icon color for content sitting ON TOP of --color-cozy-accent (the
+     primary button, the selected category chip). The accent is a bright
+     warm orange, so dark text reads better there than light ink does —
+     this is a distinct role from --color-cozy-surface (panel backgrounds)
+     even though in the old light theme they happened to be similar values. */
+  --color-cozy-on-accent: #241014;
+  --color-cozy-vinyl: #120a11;
+  --color-cozy-vinyl-groove: #1f1520;
+
+  --font-serif-display: 'Newsreader', 'Iowan Old Style', serif;
+  --font-sans-body: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-cozy: 0 10px 28px -8px rgb(0 0 0 / 0.55);
+  --shadow-cozy-inset: inset 0 2px 6px rgb(0 0 0 / 0.5);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-cozy-bg);
+  color: var(--color-cozy-ink);
+  font-family: var(--font-sans-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-cozy-brass) transparent;
+}
+
+@keyframes spin-record {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-record {
+  animation: spin-record 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-record {
+    animation: none;
+  }
+}
