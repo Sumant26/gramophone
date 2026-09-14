@@ -25,6 +25,13 @@ warm gold accents, like a late-night listening room.
 - ⌨️ Full keyboard shortcuts (see below).
 - 💾 Your library, favorites, and play counts persist across reloads via
   IndexedDB — no backend, no account.
+- 📺 Optional **YouTube** tab: search YouTube (via the official Data API v3,
+  scoped to its Music category) and play results through the official
+  IFrame Player API. The turntable keeps spinning and the tonearm keeps
+  tracking, but the visualizer and crackle ambience are hidden for these
+  tracks — YouTube's audio never reaches our Web Audio graph, by design (see
+  [Music Sources](#music-sources) below). Requires a free API key; the app
+  works fully without one, just without this tab.
 
 ## Tech Stack
 
@@ -35,6 +42,9 @@ warm gold accents, like a late-night listening room.
   crackle/visualizer layers
 - **Dexie** (IndexedDB) for local persistence
 - **jsmediatags** for ID3/Vorbis/MP4 tag parsing
+- **YouTube Data API v3** + the official **YouTube IFrame Player API** for
+  the optional YouTube tab (no unofficial/scraping APIs — see
+  [Music Sources](#music-sources))
 - **Tailwind CSS v4** for styling, **Framer Motion** for the tonearm
   animation
 - **Vitest** + **React Testing Library** for unit/component tests,
@@ -59,6 +69,21 @@ Open the printed local URL, then click the folder icon in the header to add
 music. In Chrome/Edge/Brave you'll get a native folder picker and the app
 remembers folder access across sessions; in other browsers, a file picker is
 used instead (re-add the folder each session).
+
+### Enabling the YouTube tab (optional)
+
+```bash
+cp .env.example .env
+# then edit .env and set VITE_YOUTUBE_API_KEY, then restart `npm run dev`
+```
+
+Get a free key at [console.cloud.google.com](https://console.cloud.google.com):
+new project → enable "YouTube Data API v3" → Credentials → Create API key.
+For a public deployment, restrict the key to your site's domain (HTTP
+referrer restriction) and set `VITE_YOUTUBE_API_KEY` as an environment
+variable in your hosting provider (e.g. Vercel project settings). Without a
+key configured, the rest of the app works normally — the YouTube tab just
+shows a message explaining how to add one.
 
 ### Available scripts
 
@@ -88,6 +113,35 @@ used instead (re-add the folder each session).
 
 Shortcuts are automatically disabled while typing in the search box.
 
+## Music Sources
+
+This app plays music from two kinds of sources, and they have real,
+non-negotiable technical differences worth knowing about:
+
+- **Your local files** play through the Web Audio API, so the app has raw
+  access to the audio samples — that's what powers the live visualizer and
+  the synthesized vinyl-crackle ambience.
+- **YouTube** tracks play through YouTube's own official embedded player.
+  YouTube never exposes raw audio to embedding pages (by policy), so the
+  visualizer and crackle toggle are unavailable for these tracks — the
+  turntable and tonearm still animate, but there's nothing to visualize or
+  layer crackle onto. The player itself must also stay visibly on-screen per
+  YouTube's terms, which is why it shows up as a small "screen" in the
+  cabinet rather than being fully hidden.
+- Only the **official** YouTube Data API v3 (for search) and IFrame Player
+  API (for playback) are used — deliberately, not an unofficial YouTube
+  Music API. Unofficial APIs scrape a private, undocumented interface that
+  can (and does) break without notice and violates YouTube's Terms of
+  Service, so this app doesn't use one. The trade-off: search is scoped to
+  YouTube's general "Music" video category rather than a curated
+  music-only catalog, so results can occasionally include things like
+  interviews or live-session footage alongside actual tracks.
+- **Spotify** isn't integrated yet. The only legitimate path (the Spotify
+  Web Playback SDK) requires a Spotify Premium account for every listener
+  and, like YouTube, gives no access to raw audio — so it would have the
+  same visualizer/crackle limitation. Open an issue or a PR if you'd like to
+  add it.
+
 ## Browser Support
 
 Best experience in **Chrome, Edge, or Brave** (uses the File System Access
@@ -110,7 +164,11 @@ push to `main` (and posts preview URLs on PRs). To wire it up:
    (or run `vercel link` locally once to generate `.vercel/project.json`).
 2. Add these repository secrets (Settings → Secrets and variables →
    Actions): `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
-3. Push to `main` — the workflow builds and deploys automatically.
+3. To enable the YouTube tab on the deployed site, add `VITE_YOUTUBE_API_KEY`
+   as an environment variable in the Vercel project settings (not a GitHub
+   secret — it's read at build time by Vite). Optional; the rest of the app
+   works without it.
+4. Push to `main` — the workflow builds and deploys automatically.
 
 ## Contributing
 

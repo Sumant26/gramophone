@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     # Requires repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
     # (see README.md "Deployment" section for how to obtain these).
-    if: ${{ github.repository != '' }}
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

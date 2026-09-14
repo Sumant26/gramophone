@@ -17,6 +17,43 @@ tagged release.
 - A second, lighter theme as an explicit alternative (not a system dark-
   mode auto-switch — Velvet Nocturne is now a deliberate single identity,
   see `docs/design-tokens.md`).
+- Spotify integration, via the Spotify Web Playback SDK (requires every
+  listener to have Spotify Premium; like YouTube, gives no raw-audio access,
+  so it would share the same visualizer/crackle limitation). Not started.
+
+## 2026-09-14 — Add a YouTube source (official APIs only)
+
+### Added
+
+- A "YouTube" tab next to "My Library": search via the official **YouTube
+  Data API v3** (scoped to `videoCategoryId=10`, YouTube's "Music"
+  category), playback via the official **YouTube IFrame Player API**,
+  styled as a small brass-framed "screen" inset in the cabinet.
+- `usePlayerStore` now owns two engines — `AudioEngine` (local files) and
+  the new `YouTubeEngine` — and routes every transport action to whichever
+  one owns the current track, keyed off a new `source: 'local' | 'youtube'`
+  field on track objects. `next`/`previous`/`shuffle`/`repeat` all work
+  across a queue of YouTube results the same way they do for local tracks.
+- `.env.example` documenting the optional `VITE_YOUTUBE_API_KEY`; the app
+  works fully without one, the YouTube tab just explains how to add it.
+
+### Changed
+
+- The turntable and tonearm keep animating during YouTube playback, but the
+  frequency visualizer and vinyl-crackle toggle are hidden while a YouTube
+  track is active — YouTube's embedded player never exposes raw audio
+  samples to the page, so there's nothing for either to attach to.
+
+### Decided against
+
+- An unofficial/reverse-engineered YouTube Music API. It would let the
+  YouTube tab feel more like a real music catalog (no "Music"-category
+  approximation, and Spotify-Premium-free), but it scrapes a private,
+  undocumented interface — it violates YouTube's Terms of Service and can
+  break without notice. Only the official Data API v3 and IFrame Player API
+  are used here, deliberately, even though that means search results can
+  occasionally include non-music content (interviews, live-session
+  footage) that a curated catalog wouldn't.
 
 ## 2026-09-14 — Velvet Nocturne redesign
 

@@ -17,6 +17,8 @@ src/
 │   ├── player/
 │   │   ├── audioEngine.js      # Web Audio API wrapper (framework-agnostic)
 │   │   ├── usePlayerStore.js   # Zustand store: playback state/actions
+│   │   │                       #   (owns AudioEngine + YouTubeEngine, routes
+│   │   │                       #   transport actions by track.source)
 │   │   ├── visualizerMath.js   # Pure downsampling math for the visualizer
 │   │   └── components/         # Turntable, PlayerControls, VolumeKnob, …
 │   ├── library/
@@ -27,8 +29,15 @@ src/
 │   ├── categories/
 │   │   ├── deriveCategories.js # Pure: tracks -> category list + filtering
 │   │   └── components/         # CategoryRail
-│   └── queue/
-│       └── components/         # QueuePanel
+│   ├── queue/
+│   │   └── components/         # QueuePanel
+│   └── youtube/
+│       ├── youtubeEngine.js         # Official IFrame Player API wrapper
+│       ├── loadYouTubeIframeApi.js  # Singleton <script> loader for the API
+│       ├── youtubeApi.js            # Official Data API v3 search (Music category)
+│       ├── useYouTubeStore.js       # Zustand store: search box state (debounced)
+│       ├── toQueueTrack.js          # Adapts a search result into the shared track shape
+│       └── components/              # YouTubeSearchPanel, YouTubePlayerMount
 ├── shared/
 │   ├── components/              # Button, Icon (generic, no feature logic)
 │   ├── hooks/                   # useKeyboardShortcuts
@@ -72,15 +81,66 @@ offset. Position (`getCurrentTime()`) is always _derived_ from
 never drift from what's actually audible — this is also why the UI polls
 position via `requestAnimationFrame` (in `App.jsx`) rather than a timer.
 
+## Two playback engines, one store
+
+`usePlayerStore` owns two engine instances for the app's lifetime:
+`AudioEngine` (local files, Web Audio API) and `YouTubeEngine`
+(`src/features/youtube/youtubeEngine.js`, wrapping the official YouTube
+IFrame Player API). They deliberately expose the same small surface —
+`play()`, `pause()`, `stop()`, `seek()`, `getCurrentTime()`, `getDuration()`,
+`setVolume()`, `dispose()` — so the store can treat them almost
+interchangeably. Every track object carries a `source: 'local' | 'youtube'`
+field; the store's internal `activeEngine()` helper picks the right engine
+from `currentTrack.source` and every transport action
+(`togglePlayPause`/`stop`/`seekTo`/`skipForward`/`skipBackward`/`previous`/
+`syncPosition`) is routed through it, so components never need to know
+which engine is live.
+
+They aren't fully interchangeable, though, and the differences are load-
+bearing, not accidental:
+
+- **No raw audio access for YouTube.** `AudioEngine` decodes into an
+  `AudioBuffer` and exposes an `AnalyserNode` (`getAnalyser()`) for the
+  visualizer, plus a synthesized crackle layer mixed into its own audio
+  graph. YouTube's embedded player never exposes samples to the page (by
+  policy, tied to DRM/licensing) — there is nothing to analyse or mix with.
+  `usePlayerStore.getAnalyser()` returns `null` for a YouTube track, and the
+  UI hides the visualizer and crackle toggle rather than showing a dead
+  control.
+- **The player must stay visibly mounted.** YouTube's Terms of Service
+  require the IFrame player to remain on-screen at a reasonable size while
+  in use — it can't be hidden or shrunk to 0×0. `YouTubePlayerMount`
+  therefore renders unconditionally in the cabinet (never conditionally
+  mounted/unmounted on whether a YouTube track is active), so the live
+  `YT.Player` is never orphaned by its container disappearing; it just shows
+  a quiet placeholder caption when idle.
+- **YouTube can be driven from outside the app.** The embedded player has
+  its own on-screen controls. `YouTubeEngine` reports state changes back via
+  `handlers.onPlayingChange(boolean)` (in addition to `onEnded`/`onError`),
+  and `usePlayerStore` mirrors that into `isPlaying` — but only while a
+  YouTube track is actually current, so a stale event from a previous video
+  can't clobber local playback state.
+- **Search, not a catalog.** `youtubeApi.js` calls the official Data API v3
+  `search.list` scoped to `videoCategoryId=10` (YouTube's "Music" category)
+  — a compliant approximation, not a curated music-only catalog. This is a
+  conscious trade against building on an unofficial YouTube Music API, which
+  would violate YouTube's Terms of Service and can break without notice.
+
 ## State management
 
-Two Zustand stores, one per feature that needs shared mutable state:
+Three Zustand stores, one per feature that needs shared mutable state:
 
 - **`usePlayerStore`** — queue, current track, play/pause, position/
   duration, volume, shuffle/repeat, sleep timer, crackle toggle. Owns the
-  `AudioEngine` instance.
+  `AudioEngine` and `YouTubeEngine` instances (see above).
 - **`useLibraryStore`** — the track list, scan progress, selected category,
   search query. Persists track metadata to Dexie on every mutation.
+- **`useYouTubeStore`** — the YouTube tab's search box: query, results,
+  loading/error state. Debounces (400ms) and aborts superseded searches via
+  `AbortController` so a fast typist's earlier request can't resolve after
+  and overwrite a newer one. Deliberately separate from `useLibraryStore` —
+  it's a different kind of data entirely (remote, transient, no persisted
+  metadata) rather than another local-library concern.
 
 Derived data (categories, filtered/searched track lists) is **not** stored
 in either store — it's computed with plain functions

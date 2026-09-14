@@ -1,6 +1,6 @@
 # Gramophone — Product & Technical Specification
 
-Status: v1.0 (MVP scope)
+Status: v1.1 (MVP + optional YouTube source)
 Owner: Sumant
 
 ## 1. Purpose
@@ -22,8 +22,13 @@ and full transport controls.
 
 **Non-Goals (out of scope for v1)**
 
-- Streaming from third-party services (Spotify/Apple Music/etc.) — this
-  requires licensing agreements and is not attempted here.
+- Streaming from services requiring a paid/licensed SDK the app can't offer
+  for free to every user (Spotify Web Playback SDK requires each listener
+  to have Premium) — not attempted in v1.1. See §4.6 for the one streaming
+  source that _is_ in scope, and why.
+- Any unofficial/reverse-engineered streaming API (e.g. scraping YouTube
+  Music's private endpoints). Violates the relevant Terms of Service and is
+  fragile by construction — deliberately excluded regardless of scope.
 - Multi-user accounts, cloud sync, or a backend server.
 - Audio editing (trimming, effects beyond the optional crackle overlay).
 - Mobile native apps (the web app is responsive down to ~360px width but is
@@ -47,6 +52,9 @@ and full transport controls.
 9. As a user, I can set a sleep timer so playback stops automatically.
 10. As a user, closing and reopening the app keeps my library, favorites,
     and play counts intact (re-linking files if the browser requires it).
+11. As a user, I can search YouTube from a "YouTube" tab next to my library
+    and play a result, with the turntable/tonearm still animating, so I'm
+    not limited to files I already own.
 
 ## 4. Functional Requirements
 
@@ -127,6 +135,36 @@ ogg, m4a, aac, opus, weba`. Unsupported files are silently skipped.
 Shortcuts are suppressed while focus is in a text input/textarea/
 contenteditable element.
 
+### 4.6 YouTube source (optional)
+
+- **FR-19**: A "YouTube" tab next to "My Library" lets the user search
+  YouTube via the official **Data API v3** (`search.list`), scoped to
+  `videoCategoryId=10` (YouTube's built-in "Music" category) as a
+  ToS-compliant approximation of a music-only catalog — not a curated or
+  guaranteed-music-only result set.
+- **FR-20**: Playback of a YouTube result MUST use the official **IFrame
+  Player API**, embedded and kept visibly rendered per YouTube's Terms of
+  Service (it is never hidden or sized to 0×0), styled as a small "screen"
+  inset in the cabinet next to the turntable.
+- **FR-21**: This feature MUST NOT use any unofficial/reverse-engineered
+  YouTube Music API. If the official Data API v3 or IFrame Player API ever
+  become unavailable for this use case, the feature degrades to
+  "unavailable" rather than falling back to an unofficial one.
+- **FR-22**: The turntable graphic and tonearm continue to animate
+  normally during YouTube playback (FR-12/FR-13 apply). The frequency
+  visualizer (FR-15) and vinyl-crackle ambience (FR-11) are unavailable for
+  YouTube tracks and their controls are hidden while one is active, because
+  YouTube does not expose raw audio samples to the embedding page — there is
+  nothing for `AnalyserNode` or the crackle mixer to attach to.
+- **FR-23**: Without a `VITE_YOUTUBE_API_KEY` configured, the rest of the
+  app (local library, playback, etc.) MUST work exactly as in v1.0; the
+  YouTube tab shows an explanatory message instead of failing silently or
+  throwing.
+- **FR-24**: A played YouTube result is appended to the same queue/transport
+  model as local tracks (next/previous/shuffle/repeat all work across it),
+  distinguished internally by a `source: 'youtube'` tag rather than a
+  separate queue.
+
 ## 5. Non-Functional Requirements
 
 - **NFR-1 (Performance)**: First meaningful paint should be fast on a
@@ -144,15 +182,24 @@ contenteditable element.
   state (`error`) rather than throwing uncaught.
 - **NFR-5 (Privacy)**: No audio file or its metadata leaves the browser.
   There is no backend in v1; IndexedDB is local to the browser profile.
-- **NFR-6 (Testability)**: Playback logic (AudioEngine) is isolated from
-  React so it can be unit tested against a mocked `AudioContext` without a
-  real audio backend.
+- **NFR-6 (Testability)**: Playback logic (AudioEngine, YouTubeEngine) is
+  isolated from React so it can be unit tested against a mocked
+  `AudioContext` / mocked `window.YT` without a real audio backend or
+  network call.
+- **NFR-7 (Graceful degradation)**: A missing/invalid YouTube API key, a
+  quota error, or a network failure while searching YouTube MUST surface a
+  specific, actionable message in the YouTube tab and MUST NOT affect local
+  library playback in any way.
 
 ## 6. Architecture Overview
 
-Feature-based structure (`src/features/{player,library,categories,queue}`),
-each owning its state (Zustand store), components, and pure logic modules.
-See `ARCHITECTURE.md` for the full breakdown and the audio-engine design in
+Feature-based structure
+(`src/features/{player,library,categories,queue,youtube}`), each owning its
+state (Zustand store), components, and pure logic modules. `usePlayerStore`
+holds one `AudioEngine` (local files) and one `YouTubeEngine` (YouTube)
+instance and routes every transport action to whichever one owns the
+current track, via a `source` field on the track object — see
+`ARCHITECTURE.md` for the full breakdown and both engines' design in
 detail.
 
 ## 7. Data Model (IndexedDB, via Dexie)
@@ -174,6 +221,12 @@ tracks: {
 }
 ```
 
+YouTube results are not persisted — they're transient search results,
+mapped at play-time into the same queue-track shape local tracks use
+(`{ id, title, artist, album, pictureUrl, durationSeconds, isFavorite }`)
+plus two extra fields: `source: 'youtube'` and `videoId: string`. See
+`toQueueTrack.js`.
+
 ## 8. Browser Support
 
 - **Primary target**: Latest Chrome/Edge/Brave (File System Access API,
@@ -190,3 +243,13 @@ tracks: {
   roadmap items).
 - Loudness normalization (ReplayGain-style) across tracks is not yet
   implemented.
+- The YouTube tab requires a `VITE_YOUTUBE_API_KEY`; without one it's
+  visible but inert (explains itself rather than failing silently).
+- YouTube search is scoped to the "Music" video category, which is an
+  approximation (creators self-categorize) rather than a guaranteed
+  music-only catalog.
+- YouTube tracks have no visualizer, no crackle ambience, and no persisted
+  duration in the track list (duration becomes known once the video is
+  cued) — all consequences of YouTube not exposing raw audio or metadata
+  the Data API doesn't return, not implementation gaps.
+- Spotify is not integrated (see §2 Non-Goals).

@@ -41,6 +41,31 @@ test.describe('Gramophone shell', () => {
     expect(Number(after)).toBeGreaterThan(Number(before))
   })
 
+  test('switching to the YouTube tab shows its search box and a missing-API-key message', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await page.getByRole('tab', { name: 'YouTube' }).click()
+    const search = page.getByLabel('Search YouTube')
+    await expect(search).toBeVisible()
+    await search.fill('lofi beats')
+    // No VITE_YOUTUBE_API_KEY is configured in this environment, so the
+    // store should surface its friendly, actionable error rather than an
+    // unhandled rejection.
+    await expect(page.getByRole('alert')).toContainText('VITE_YOUTUBE_API_KEY')
+  })
+
+  test('the YouTube screen stays visible in the cabinet regardless of the active library tab', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+    await page.getByRole('tab', { name: 'YouTube' }).click()
+    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+    await page.getByRole('tab', { name: 'My Library' }).click()
+    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+  })
+
   test('the app renders correctly on a phone-width viewport without horizontal overflow', async ({
     page,
   }) => {

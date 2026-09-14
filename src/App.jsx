@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
+import clsx from 'clsx'
 import { usePlayerStore } from '@/features/player/usePlayerStore'
 import { useLibraryStore } from '@/features/library/useLibraryStore'
+import { useYouTubeStore } from '@/features/youtube/useYouTubeStore'
+import { toQueueTrack } from '@/features/youtube/toQueueTrack'
 import {
   deriveCategories,
   filterTracksByCategory,
@@ -21,6 +24,8 @@ import { TrackList } from '@/features/library/components/TrackList'
 import { SearchBar } from '@/features/library/components/SearchBar'
 import { FolderPicker } from '@/features/library/components/FolderPicker'
 import { QueuePanel } from '@/features/queue/components/QueuePanel'
+import { YouTubeSearchPanel } from '@/features/youtube/components/YouTubeSearchPanel'
+import { YouTubePlayerMount } from '@/features/youtube/components/YouTubePlayerMount'
 
 /** The app's mark: a plain drawn ring + center dot (a record label, in miniature) rather than an emoji, to match the Velvet Nocturne identity's more considered feel. */
 function Brandmark() {
@@ -45,6 +50,7 @@ function Brandmark() {
 
 function App() {
   const [isQueueOpen, setIsQueueOpen] = useState(false)
+  const [libraryTab, setLibraryTab] = useState('local') // 'local' | 'youtube'
 
   const {
     queue,
@@ -75,6 +81,7 @@ function App() {
     setSleepTimer,
     syncPosition,
     getAnalyser,
+    mountYouTubePlayer,
   } = usePlayerStore()
 
   const {
@@ -89,6 +96,14 @@ function App() {
     setSelectedCategory,
     setSearchQuery,
   } = useLibraryStore()
+
+  const {
+    query: youtubeQuery,
+    results: youtubeResults,
+    isSearching: isSearchingYouTube,
+    errorMessage: youtubeErrorMessage,
+    setQuery: setYouTubeQuery,
+  } = useYouTubeStore()
 
   useEffect(() => {
     loadFromDb()
@@ -119,6 +134,18 @@ function App() {
     [playQueue, visibleTracks],
   )
 
+  // The whole current results page becomes the queue, so next/previous
+  // step through it just like a local playlist — only the track shape
+  // (and which engine plays it) differs, via toQueueTrack's `source` tag.
+  const handlePlayYouTubeResult = useCallback(
+    (_result, indexInResults) => {
+      playQueue(youtubeResults.map(toQueueTrack), indexInResults)
+    },
+    [playQueue, youtubeResults],
+  )
+
+  const isYouTubeTrack = currentTrack?.source === 'youtube'
+
   useKeyboardShortcuts({
     onTogglePlayPause: togglePlayPause,
     onStop: stop,
@@ -145,16 +172,18 @@ function App() {
             sleepTimerMinutes={sleepTimerMinutes}
             onSetSleepTimer={setSleepTimer}
           />
-          <Button
-            size="sm"
-            active={crackleEnabled}
-            aria-pressed={crackleEnabled}
-            aria-label="Toggle vinyl crackle ambience"
-            onClick={toggleCrackle}
-            title="Vinyl crackle ambience"
-          >
-            <Icon name="vinylDrop" size={16} />
-          </Button>
+          {!isYouTubeTrack && (
+            <Button
+              size="sm"
+              active={crackleEnabled}
+              aria-pressed={crackleEnabled}
+              aria-label="Toggle vinyl crackle ambience"
+              onClick={toggleCrackle}
+              title="Vinyl crackle ambience"
+            >
+              <Icon name="vinylDrop" size={16} />
+            </Button>
+          )}
           <Button
             size="sm"
             active={isQueueOpen}
@@ -183,11 +212,22 @@ function App() {
             title={currentTrack?.title}
             artist={currentTrack?.artist}
           />
-          <Visualizer
-            analyser={getAnalyser()}
-            isPlaying={isPlaying}
-            className="w-full max-w-md"
+          {/* Always mounted (never conditionally rendered) so the live
+              YT.Player is never orphaned by its container unmounting —
+              YouTube's terms also require it to stay visibly on-screen
+              rather than hidden. It just shows a quiet placeholder caption
+              until a YouTube track is actually loaded. */}
+          <YouTubePlayerMount
+            onMount={mountYouTubePlayer}
+            hasYouTubeTrack={isYouTubeTrack}
           />
+          {!isYouTubeTrack && (
+            <Visualizer
+              analyser={getAnalyser()}
+              isPlaying={isPlaying}
+              className="w-full max-w-md"
+            />
+          )}
           <NowPlaying track={currentTrack} onToggleFavorite={toggleFavorite} />
           <PlayerControls
             isPlaying={isPlaying}
@@ -221,20 +261,74 @@ function App() {
         </aside>
 
         <section aria-label="Your library" className="min-w-0">
-          <CategoryRail
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            onSelect={setSelectedCategory}
-          />
-          <div className="mt-3 rounded-2xl bg-cozy-surface p-3 shadow-sm">
-            <TrackList
-              tracks={visibleTracks}
-              currentTrackId={currentTrack?.id}
-              isPlaying={isPlaying}
-              onPlayTrack={handlePlayTrack}
-              onToggleFavorite={toggleFavorite}
-            />
+          <div
+            role="tablist"
+            aria-label="Music source"
+            className="mb-3 flex w-fit gap-1 rounded-full bg-cozy-surface p-1 shadow-sm"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={libraryTab === 'local'}
+              onClick={() => setLibraryTab('local')}
+              className={clsx(
+                'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-colors',
+                libraryTab === 'local'
+                  ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
+                  : 'text-cozy-ink-muted hover:text-cozy-ink',
+              )}
+            >
+              <Icon name="folder" size={14} />
+              My Library
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={libraryTab === 'youtube'}
+              onClick={() => setLibraryTab('youtube')}
+              className={clsx(
+                'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-colors',
+                libraryTab === 'youtube'
+                  ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
+                  : 'text-cozy-ink-muted hover:text-cozy-ink',
+              )}
+            >
+              <Icon name="broadcast" size={14} />
+              YouTube
+            </button>
           </div>
+
+          {libraryTab === 'local' ? (
+            <>
+              <CategoryRail
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                onSelect={setSelectedCategory}
+              />
+              <div className="mt-3 rounded-2xl bg-cozy-surface p-3 shadow-sm">
+                <TrackList
+                  tracks={visibleTracks}
+                  currentTrackId={currentTrack?.id}
+                  isPlaying={isPlaying}
+                  onPlayTrack={handlePlayTrack}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl bg-cozy-surface p-3 shadow-sm">
+              <YouTubeSearchPanel
+                query={youtubeQuery}
+                results={youtubeResults}
+                isSearching={isSearchingYouTube}
+                errorMessage={youtubeErrorMessage}
+                currentTrackId={currentTrack?.id}
+                isPlaying={isPlaying}
+                onQueryChange={setYouTubeQuery}
+                onPlayResult={handlePlayYouTubeResult}
+              />
+            </div>
+          )}
         </section>
       </main>
     </div>

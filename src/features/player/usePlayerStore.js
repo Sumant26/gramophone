@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { AudioEngine } from './audioEngine'
+import { YouTubeEngine } from '@/features/youtube/youtubeEngine'
 import { db } from '@/db/db'
 
 const SKIP_SECONDS = 10
@@ -14,19 +15,41 @@ function shuffleOrder(length) {
 }
 
 /**
- * Central playback state. Owns one AudioEngine instance for the app's
- * lifetime and mirrors its state into React-observable store fields. Every
- * transport action (play/pause/next/previous/seek) goes through here rather
- * than touching AudioEngine from components directly.
+ * Central playback state. Owns one AudioEngine instance (local files) and
+ * one YouTubeEngine instance (streamed via the official IFrame API) for the
+ * app's lifetime, and mirrors their state into React-observable store
+ * fields. Every transport action (play/pause/next/previous/seek) goes
+ * through here rather than touching either engine from components
+ * directly. Which engine is "live" is decided per-track from
+ * `currentTrack.source` ('local' by default, or 'youtube') — the two
+ * engines never run at once.
  */
 export const usePlayerStore = create((set, get) => {
-  const engine = new AudioEngine({
+  const localEngine = new AudioEngine({
     onEnded: () => get().handleTrackEnded(),
     onError: (err) => set({ error: err.message }),
   })
 
+  const youtubeEngine = new YouTubeEngine({
+    onEnded: () => get().handleTrackEnded(),
+    onError: (err) => set({ error: err.message }),
+    // The user can also drive playback from YouTube's own on-screen
+    // controls, so mirror its reported state back — but only while a
+    // YouTube track is actually current, so a stale event from a
+    // previous video can't clobber local playback state.
+    onPlayingChange: (isPlaying) => {
+      if (get().currentTrack?.source === 'youtube') set({ isPlaying })
+    },
+  })
+
+  /** The engine that owns whatever is (or is about to be) playing. */
+  function activeEngine() {
+    return get().currentTrack?.source === 'youtube' ? youtubeEngine : localEngine
+  }
+
   return {
-    engine,
+    localEngine,
+    youtubeEngine,
     queue: [], // array of track objects, in playback order
     queueIndex: -1,
     shuffledIndices: null, // when shuffle is on: a permutation over `queue`
@@ -56,13 +79,20 @@ export const usePlayerStore = create((set, get) => {
       const { queue } = get()
       const track = queue[index]
       if (!track) return
+      const isYouTube = track.source === 'youtube'
       set({ isLoading: true, error: null, queueIndex: index, currentTrack: track })
       try {
-        const file = await track.getFile()
-        const { duration } = await engine.loadTrack(file)
-        engine.play(0)
+        let duration
+        if (isYouTube) {
+          ;({ duration } = await youtubeEngine.loadTrack(track.videoId))
+          youtubeEngine.play()
+        } else {
+          const file = await track.getFile()
+          ;({ duration } = await localEngine.loadTrack(file))
+          localEngine.play(0)
+        }
         set({ isLoading: false, isPlaying: true, duration, position: 0 })
-        get().recordPlay(track.id)
+        if (!isYouTube) get().recordPlay(track.id)
       } catch (err) {
         set({ isLoading: false, isPlaying: false, error: String(err) })
       }
@@ -78,6 +108,7 @@ export const usePlayerStore = create((set, get) => {
     togglePlayPause() {
       const { isPlaying, currentTrack } = get()
       if (!currentTrack) return
+      const engine = activeEngine()
       if (isPlaying) {
         engine.pause()
         set({ isPlaying: false })
@@ -88,21 +119,22 @@ export const usePlayerStore = create((set, get) => {
     },
 
     stop() {
-      engine.stop()
+      activeEngine().stop()
       set({ isPlaying: false, position: 0 })
     },
 
     seekTo(seconds) {
+      const engine = activeEngine()
       engine.seek(seconds)
       set({ position: engine.getCurrentTime() })
     },
 
     skipForward() {
-      get().seekTo(engine.getCurrentTime() + SKIP_SECONDS)
+      get().seekTo(activeEngine().getCurrentTime() + SKIP_SECONDS)
     },
 
     skipBackward() {
-      get().seekTo(engine.getCurrentTime() - SKIP_SECONDS)
+      get().seekTo(activeEngine().getCurrentTime() - SKIP_SECONDS)
     },
 
     next() {
@@ -138,7 +170,7 @@ export const usePlayerStore = create((set, get) => {
       if (queue.length === 0) return
       // Standard player convention: restart current track if more than a
       // couple seconds in, otherwise go to the previous track.
-      if (engine.getCurrentTime() > 3) {
+      if (activeEngine().getCurrentTime() > 3) {
         get().seekTo(0)
         return
       }
@@ -156,7 +188,11 @@ export const usePlayerStore = create((set, get) => {
     },
 
     setVolume(value) {
-      engine.setVolume(value)
+      // Kept in sync on both engines (not just the active one) so the
+      // level carries over seamlessly when the user switches between a
+      // local track and a YouTube one.
+      localEngine.setVolume(value)
+      youtubeEngine.setVolume(value)
       set({ volume: value })
     },
 
@@ -176,8 +212,12 @@ export const usePlayerStore = create((set, get) => {
     },
 
     toggleCrackle() {
+      // Crackle ambience is synthesized from the local engine's own audio
+      // graph — there's nothing to layer it onto for a YouTube stream, and
+      // the UI hides this control for YouTube tracks accordingly.
+      if (get().currentTrack?.source === 'youtube') return
       const enabled = !get().crackleEnabled
-      engine.setCrackleEnabled(enabled)
+      localEngine.setCrackleEnabled(enabled)
       set({ crackleEnabled: enabled })
     },
 
@@ -200,7 +240,7 @@ export const usePlayerStore = create((set, get) => {
     syncPosition() {
       const { isPlaying, sleepTimerEndsAt } = get()
       if (isPlaying) {
-        set({ position: engine.getCurrentTime() })
+        set({ position: activeEngine().getCurrentTime() })
       }
       if (sleepTimerEndsAt && Date.now() >= sleepTimerEndsAt) {
         get().togglePlayPause()
@@ -208,8 +248,20 @@ export const usePlayerStore = create((set, get) => {
       }
     },
 
+    /**
+     * The Web Audio analyser node, for the visualizer — only meaningful
+     * for local playback. YouTube's audio never touches our audio graph
+     * (DRM/ToS), so there's nothing to analyse for a YouTube track; the
+     * UI hides the visualizer in that case rather than showing a frozen one.
+     */
     getAnalyser() {
-      return engine.getAnalyser()
+      if (get().currentTrack?.source === 'youtube') return null
+      return localEngine.getAnalyser()
+    },
+
+    /** Attaches the YouTubeEngine to its visible DOM mount. Called once by YouTubePlayerMount on first render; safe to call again (idempotent). */
+    mountYouTubePlayer(container) {
+      return youtubeEngine.mount(container)
     },
   }
 })

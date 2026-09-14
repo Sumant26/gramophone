@@ -19,6 +19,11 @@ test-results
 blob-report
 .vercel
 
+# Local env vars (API keys) — never commit these
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -26,6 +26,9 @@ const paths = {
   folder: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z',
   queue: 'M4 6h16M4 12h16M4 18h10',
   close: 'M6 6l12 12M18 6L6 18',
+  disc: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  broadcast:
+    'M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM7.8 8.8a6 6 0 0 0 0 8.4M16.2 8.8a6 6 0 0 1 0 8.4M4.9 5.9a10 10 0 0 0 0 14.2M19.1 5.9a10 10 0 0 1 0 14.2',
 }
 
 export function Icon({ name, size = 20, filled = false, className = '', ...rest }) {

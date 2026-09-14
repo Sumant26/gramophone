@@ -81,7 +81,7 @@ describe('usePlayerStore', () => {
   it('previous restarts the current track once played past 3 seconds', async () => {
     const tracks = [makeTrack('a'), makeTrack('b')]
     await usePlayerStore.getState().playQueue(tracks, 1)
-    usePlayerStore.getState().engine.context.currentTime = 10 // > 3s in
+    usePlayerStore.getState().localEngine.context.currentTime = 10 // > 3s in
     usePlayerStore.getState().previous()
     expect(usePlayerStore.getState().queueIndex).toBe(1)
   })
