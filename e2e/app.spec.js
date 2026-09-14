@@ -55,15 +55,16 @@ test.describe('Gramophone shell', () => {
     await expect(page.getByRole('alert')).toContainText('VITE_YOUTUBE_API_KEY')
   })
 
-  test('the YouTube screen stays visible in the cabinet regardless of the active library tab', async ({
+  test('the YouTube player stays attached in the DOM regardless of the active library tab', async ({
     page,
   }) => {
     await page.goto('/')
-    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+    await expect(page.getByTestId('youtube-mount')).toBeAttached()
+    await expect(page.getByLabel('Audio visualizer')).toBeVisible()
     await page.getByRole('tab', { name: 'YouTube' }).click()
-    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+    await expect(page.getByTestId('youtube-mount')).toBeAttached()
     await page.getByRole('tab', { name: 'My Library' }).click()
-    await expect(page.getByTestId('youtube-mount')).toBeVisible()
+    await expect(page.getByTestId('youtube-mount')).toBeAttached()
   })
 
   test('the app renders correctly on a phone-width viewport without horizontal overflow', async ({
