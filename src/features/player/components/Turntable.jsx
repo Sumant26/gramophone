@@ -2,30 +2,44 @@ import { motion } from 'framer-motion'
 
 /**
  * The visual centerpiece: a spinning record with album art at its center
- * and a tonearm that pivots onto the record when playing and lifts off
- * when paused/stopped. Purely presentational — driven by props, not by
- * store access, so it stays easy to test and reuse.
- *
- * Deliberately has no background/furniture of its own — it's meant to sit
- * directly on the wood-toned "cabinet" panel that hosts it (see App.jsx),
- * like a real turntable resting on a console rather than floating in a
- * card.
+ * and a tonearm that pivots onto the record when playing and rests on the side
+ * cradle when paused/stopped.
+ * Clicking the turntable toggles play/pause.
  */
-export function Turntable({ isPlaying, albumArtUrl, title, artist }) {
+export function Turntable({
+  isPlaying,
+  albumArtUrl,
+  title,
+  artist,
+  onTogglePlayPause,
+}) {
   return (
     <div
-      className="relative mx-auto aspect-square w-full max-w-lg select-none"
+      className="group relative mx-auto aspect-square w-full max-w-lg cursor-pointer select-none"
       data-testid="turntable"
+      onClick={onTogglePlayPause}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          onTogglePlayPause?.()
+        }
+      }}
+      aria-label={
+        title ? `${isPlaying ? 'Pause' : 'Play'} record: ${title}` : 'Turntable'
+      }
+      title={isPlaying ? 'Click to pause record' : 'Click to play record'}
     >
       {/* Platter shadow */}
       <div className="absolute inset-[6%] translate-y-[3%] rounded-full bg-black/40 blur-xl" />
 
       {/* Platter */}
-      <div className="absolute inset-[8%] rounded-full bg-cozy-vinyl-groove shadow-[var(--shadow-cozy-inset)]" />
+      <div className="absolute inset-[8%] rounded-full bg-cozy-vinyl-groove shadow-[var(--shadow-cozy-inset)] transition-transform duration-300 group-hover:scale-[1.01]" />
 
       {/* Record */}
       <div
-        className={`absolute inset-[10%] rounded-full bg-cozy-vinyl shadow-xl ${
+        className={`absolute inset-[10%] rounded-full bg-cozy-vinyl shadow-xl transition-transform duration-300 group-hover:scale-[1.01] ${
           isPlaying ? 'animate-spin-record' : ''
         }`}
         style={{
@@ -49,17 +63,26 @@ export function Turntable({ isPlaying, albumArtUrl, title, artist }) {
         </div>
       </div>
 
-      {/* Tonearm */}
+      {/* Tonearm Resting Cradle (Pin Rest on the side) */}
+      <div
+        className="absolute right-[1%] top-[38%] h-4 w-4 rounded-full border border-cozy-brass/40 bg-cozy-wood-dark shadow-inner"
+        title="Tonearm rest"
+        aria-hidden="true"
+      >
+        <div className="m-auto mt-1 h-1.5 w-1.5 rounded-full bg-cozy-brass/70" />
+      </div>
+
+      {/* Tonearm / Needle Pin */}
       <motion.div
-        className="absolute right-[4%] top-[6%] h-[44%] w-[6%] origin-top"
-        animate={{ rotate: isPlaying ? 24 : -18 }}
-        transition={{ type: 'spring', stiffness: 80, damping: 14 }}
+        className="pointer-events-none absolute right-[4%] top-[6%] h-[44%] w-[6%] origin-top"
+        animate={{ rotate: isPlaying ? 24 : -40 }}
+        transition={{ type: 'spring', stiffness: 70, damping: 13 }}
         data-testid="tonearm"
         aria-hidden="true"
       >
-        <div className="mx-auto h-3 w-3 rounded-full bg-cozy-brass shadow" />
-        <div className="mx-auto h-full w-[3px] rounded-full bg-gradient-to-b from-cozy-brass to-cozy-brass-light" />
-        <div className="mx-auto -mt-1 h-2 w-4 rounded-sm bg-cozy-vinyl shadow" />
+        <div className="mx-auto h-3.5 w-3.5 rounded-full bg-cozy-brass shadow" />
+        <div className="mx-auto h-full w-[3.5px] rounded-full bg-gradient-to-b from-cozy-brass to-cozy-brass-light" />
+        <div className="mx-auto -mt-1 h-2.5 w-4 rounded-sm border border-cozy-brass-light/40 bg-cozy-vinyl shadow" />
       </motion.div>
     </div>
   )

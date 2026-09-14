@@ -3,11 +3,7 @@ import { Icon } from '@/shared/components/Icon'
 
 /**
  * The "YouTube" library tab: a search box over official YouTube Data API
- * v3 results (scoped to the Music category — see youtubeApi.js) and a
- * results list styled to match TrackList. Playing a result routes through
- * the same `onPlayResult(result, index)` → usePlayerStore.playQueue flow
- * as local tracks; the only difference lives in how the track objects are
- * shaped (see toQueueTrack.js) and which engine ends up playing them.
+ * v3 results and a results list styled to match TrackList.
  */
 export function YouTubeSearchPanel({
   query,
@@ -31,6 +27,16 @@ export function YouTubeSearchPanel({
           onChange={(e) => onQueryChange(e.target.value)}
           className="w-full bg-transparent text-sm text-cozy-ink placeholder:text-cozy-ink-muted focus:outline-none"
         />
+        {query && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => onQueryChange('')}
+            className="rounded-full p-0.5 text-cozy-ink-muted hover:text-cozy-ink"
+          >
+            <Icon name="close" size={14} />
+          </button>
+        )}
       </div>
 
       {errorMessage && (
@@ -49,8 +55,7 @@ export function YouTubeSearchPanel({
 
       {!errorMessage && !query.trim() && (
         <p className="text-sm text-cozy-ink-muted">
-          Search YouTube&rsquo;s Music category and play a result on the little screen
-          in the cabinet — the turntable keeps spinning right along with it.
+          Search YouTube&rsquo;s Music category and play a result on the turntable.
         </p>
       )}
 

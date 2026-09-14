@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/Button'
 export function NowPlaying({ track, onToggleFavorite }) {
   if (!track) {
     return (
-      <div className="text-center text-cozy-ink-muted">
+      <div className="w-full text-center text-cozy-ink-muted">
         <p className="font-serif-display text-lg">Nothing spinning yet</p>
         <p className="text-sm">Pick a song from your library to get started.</p>
       </div>
@@ -12,13 +12,20 @@ export function NowPlaying({ track, onToggleFavorite }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 text-center">
-      <div className="min-w-0 flex-1">
-        <h2 className="truncate font-serif-display text-xl text-cozy-ink">
+    <div className="flex w-full max-w-full min-w-0 items-center justify-between gap-3 px-1 text-left">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <h2
+          className="truncate font-serif-display text-lg sm:text-xl text-cozy-ink"
+          title={track.title}
+        >
           {track.title}
         </h2>
-        <p className="truncate text-sm text-cozy-ink-muted">
-          {track.artist} — {track.album}
+        <p
+          className="truncate text-xs sm:text-sm text-cozy-ink-muted"
+          title={`${track.artist}${track.album ? ` — ${track.album}` : ''}`}
+        >
+          {track.artist}
+          {track.album ? ` — ${track.album}` : ''}
         </p>
       </div>
       <Button

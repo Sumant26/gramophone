@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { toQueueTrack } from './toQueueTrack'
 
 describe('toQueueTrack', () => {
-  it('maps a YouTube search result into the common track shape', () => {
+  it('maps a YouTube search result into the common track shape and cleans boilerplate tags', () => {
     const track = toQueueTrack({
       videoId: 'abc123',
       title: 'Kind of Blue (Full Album)',
@@ -15,13 +15,22 @@ describe('toQueueTrack', () => {
       id: 'youtube:abc123',
       source: 'youtube',
       videoId: 'abc123',
-      title: 'Kind of Blue (Full Album)',
+      title: 'Kind of Blue',
       artist: 'Miles Davis - Topic',
       album: 'YouTube',
       pictureUrl: 'https://img/medium.jpg',
       durationSeconds: null,
       isFavorite: false,
     })
+  })
+
+  it('unescapes HTML entities in title', () => {
+    const track = toQueueTrack({
+      videoId: 'def456',
+      title: 'Gehra Hua (From &quot;Dhurandhar&quot;) - Arijit Singh',
+      channelTitle: 'Saregama Music',
+    })
+    expect(track.title).toBe('Gehra Hua (From "Dhurandhar") - Arijit Singh')
   })
 
   it('gives every mapped track a stable id derived from its videoId', () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { Turntable } from './Turntable'
 
 describe('Turntable', () => {
@@ -25,10 +25,22 @@ describe('Turntable', () => {
     expect(screen.getByText('No record selected')).toBeInTheDocument()
   })
 
+  it('calls onTogglePlayPause when clicked', () => {
+    const onToggle = vi.fn()
+    render(
+      <Turntable
+        isPlaying={false}
+        title="Kind of Blue"
+        artist="Miles Davis"
+        onTogglePlayPause={onToggle}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('turntable'))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+
   it('exposes an accessible label reflecting the current title', () => {
     render(<Turntable isPlaying title="Kind of Blue" artist="Miles Davis" />)
-    expect(
-      screen.getByLabelText('Now playing record: Kind of Blue'),
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Pause record: Kind of Blue')).toBeInTheDocument()
   })
 })

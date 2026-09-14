@@ -9,6 +9,18 @@ export function getYouTubeApiKey() {
   return import.meta.env.VITE_YOUTUBE_API_KEY ?? ''
 }
 
+export function decodeHtmlEntities(str) {
+  if (!str) return ''
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /**
  * Searches YouTube (scoped to the Music category) via the official Data
  * API v3. Returns a plain array of lightweight result objects — never
@@ -59,8 +71,8 @@ export async function searchYouTubeMusic(query, { signal } = {}) {
     .filter((item) => item.id?.videoId)
     .map((item) => ({
       videoId: item.id.videoId,
-      title: item.snippet.title,
-      channelTitle: item.snippet.channelTitle,
+      title: decodeHtmlEntities(item.snippet.title),
+      channelTitle: decodeHtmlEntities(item.snippet.channelTitle),
       thumbnailUrl:
         item.snippet.thumbnails?.medium?.url ??
         item.snippet.thumbnails?.default?.url ??

@@ -129,6 +129,7 @@ function App() {
 
   const handlePlayTrack = useCallback(
     (_track, indexInVisibleList) => {
+      setIsQueueOpen(false)
       playQueue(visibleTracks, indexInVisibleList)
     },
     [playQueue, visibleTracks],
@@ -139,6 +140,7 @@ function App() {
   // (and which engine plays it) differs, via toQueueTrack's `source` tag.
   const handlePlayYouTubeResult = useCallback(
     (_result, indexInResults) => {
+      setIsQueueOpen(false)
       playQueue(youtubeResults.map(toQueueTrack), indexInResults)
     },
     [playQueue, youtubeResults],
@@ -211,6 +213,7 @@ function App() {
             albumArtUrl={currentTrack?.pictureUrl}
             title={currentTrack?.title}
             artist={currentTrack?.artist}
+            onTogglePlayPause={togglePlayPause}
           />
           <Visualizer
             analyser={getAnalyser()}
