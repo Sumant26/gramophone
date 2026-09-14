@@ -1,19 +1,13 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * The visible YouTube <iframe> mount point, styled as a small brass-framed
- * "screen" set into the cabinet next to the turntable. YouTube's terms
- * require the player to stay visibly rendered at a reasonable size — it
- * can't be hidden or shrunk to 0×0 — so this stays in the DOM at a real
- * size at all times rather than only while a YouTube track is active; it
- * just shows a quiet placeholder caption until something is loaded.
+ * The off-screen YouTube <iframe> mount point.
+ * Keeps the player in the DOM so audio playback, events, and transport controls
+ * work seamlessly without displaying the video frame over the turntable cabinet.
  *
- * Mounts the engine exactly once (YT.Player takes ownership of the
- * container on construction, so re-mounting isn't meaningful) via the
- * `onMount(container)` callback — wired to usePlayerStore's
- * `mountYouTubePlayer` action by the caller.
+ * Mounts the engine exactly once via the `onMount(container)` callback.
  */
-export function YouTubePlayerMount({ onMount, hasYouTubeTrack }) {
+export function YouTubePlayerMount({ onMount }) {
   const containerRef = useRef(null)
   const hasMounted = useRef(false)
 
@@ -24,17 +18,11 @@ export function YouTubePlayerMount({ onMount, hasYouTubeTrack }) {
   }, [onMount])
 
   return (
-    <div className="w-full max-w-md overflow-hidden rounded-xl border border-cozy-brass/40 bg-cozy-vinyl shadow-cozy-inset">
-      <div
-        className="aspect-video w-full"
-        ref={containerRef}
-        data-testid="youtube-mount"
-      />
-      {!hasYouTubeTrack && (
-        <p className="px-3 py-1.5 text-center text-[11px] text-cozy-ink-muted">
-          YouTube screen — search below to play something
-        </p>
-      )}
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed -left-[9999px] top-0 h-1 w-1 overflow-hidden opacity-0"
+    >
+      <div ref={containerRef} data-testid="youtube-mount" />
     </div>
   )
 }

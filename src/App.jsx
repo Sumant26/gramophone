@@ -212,22 +212,12 @@ function App() {
             title={currentTrack?.title}
             artist={currentTrack?.artist}
           />
-          {/* Always mounted (never conditionally rendered) so the live
-              YT.Player is never orphaned by its container unmounting —
-              YouTube's terms also require it to stay visibly on-screen
-              rather than hidden. It just shows a quiet placeholder caption
-              until a YouTube track is actually loaded. */}
-          <YouTubePlayerMount
-            onMount={mountYouTubePlayer}
-            hasYouTubeTrack={isYouTubeTrack}
+          <Visualizer
+            analyser={getAnalyser()}
+            isPlaying={isPlaying}
+            className="w-full max-w-md"
           />
-          {!isYouTubeTrack && (
-            <Visualizer
-              analyser={getAnalyser()}
-              isPlaying={isPlaying}
-              className="w-full max-w-md"
-            />
-          )}
+          <YouTubePlayerMount onMount={mountYouTubePlayer} />
           <NowPlaying track={currentTrack} onToggleFavorite={toggleFavorite} />
           <PlayerControls
             isPlaying={isPlaying}

@@ -24,6 +24,16 @@ export function Visualizer({ analyser, isPlaying, className = '' }) {
       if (analyser && dataArray && isPlaying) {
         analyser.getByteFrequencyData(dataArray)
         bars = computeBarHeights(dataArray, BAR_COUNT)
+      } else if (isPlaying) {
+        // Organic simulated wave when playing streaming audio (e.g. YouTube stream)
+        const t = performance.now() * 0.003
+        bars = Array.from({ length: BAR_COUNT }, (_, i) => {
+          const wave1 = Math.sin(t + i * 0.35) * 0.25
+          const wave2 = Math.cos(t * 1.5 + i * 0.2) * 0.15
+          const wave3 = Math.sin(t * 0.7 - i * 0.15) * 0.1
+          const centerWeight = 1 - (Math.abs(i - BAR_COUNT / 2) / (BAR_COUNT / 2)) * 0.3
+          return Math.max(0.08, (wave1 + wave2 + wave3 + 0.45) * centerWeight)
+        })
       } else {
         bars = new Array(BAR_COUNT).fill(0.04)
       }
