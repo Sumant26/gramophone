@@ -1,38 +1,33 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens for the "Velvet Nocturne" theme — see docs/design-tokens.md
- * for the full rationale. This is a deliberately single, committed visual
- * identity (plum/near-black + warm gold, a late-night listening room) —
- * not a light theme with a dark-mode override, so there is intentionally
- * no `prefers-color-scheme` branch here. Keep it that way unless a future
- * request specifically asks for a second theme.
+ * Design tokens for the cozy, comforting warm vinyl listening lounge theme.
+ * Rich mahogany & roasted walnut woods, warm honey brass, comforting amber glow,
+ * and soft linen typography.
  */
 @theme {
-  --color-cozy-bg: #211320;
-  --color-cozy-surface: #2b1a29;
-  --color-cozy-surface-2: #34202f;
-  --color-cozy-wood: #3c2320;
-  --color-cozy-wood-dark: #190f10;
-  --color-cozy-brass: #c99a52;
-  --color-cozy-brass-light: #e9c684;
-  --color-cozy-ink: #f1e2ea;
-  --color-cozy-ink-muted: #b199ac;
-  --color-cozy-accent: #d9663f;
-  /* Text/icon color for content sitting ON TOP of --color-cozy-accent (the
-     primary button, the selected category chip). The accent is a bright
-     warm orange, so dark text reads better there than light ink does —
-     this is a distinct role from --color-cozy-surface (panel backgrounds)
-     even though in the old light theme they happened to be similar values. */
-  --color-cozy-on-accent: #241014;
-  --color-cozy-vinyl: #120a11;
-  --color-cozy-vinyl-groove: #1f1520;
+  --color-cozy-bg: #18110e;
+  --color-cozy-surface: #241914;
+  --color-cozy-surface-2: #2f201a;
+  --color-cozy-wood: #3a2219;
+  --color-cozy-wood-dark: #1c100b;
+  --color-cozy-brass: #d49e52;
+  --color-cozy-brass-light: #f3cf8c;
+  --color-cozy-ink: #faede2;
+  --color-cozy-ink-muted: #c4aca0;
+  --color-cozy-accent: #e06e3e;
+  --color-cozy-on-accent: #200f09;
+  --color-cozy-vinyl: #110c0a;
+  --color-cozy-vinyl-groove: #1a1310;
 
-  --font-serif-display: 'Newsreader', 'Iowan Old Style', serif;
+  --font-serif-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
   --font-sans-body: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-cozy: 0 10px 28px -8px rgb(0 0 0 / 0.55);
-  --shadow-cozy-inset: inset 0 2px 6px rgb(0 0 0 / 0.5);
+  --shadow-cozy:
+    0 14px 35px -8px rgba(0, 0, 0, 0.65), 0 0 20px rgba(212, 158, 82, 0.08);
+  --shadow-cozy-inset: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-record-sleeve:
+    0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 html,
@@ -43,6 +38,10 @@ body,
 
 body {
   background-color: var(--color-cozy-bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 158, 82, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 20% 40%, rgba(224, 110, 62, 0.04), transparent);
+  background-attachment: fixed;
   color: var(--color-cozy-ink);
   font-family: var(--font-sans-body);
   -webkit-font-smoothing: antialiased;
@@ -64,6 +63,31 @@ body {
 
 .animate-spin-record {
   animation: spin-record 1.8s linear infinite;
+}
+
+/* Subtle vinyl shine highlight */
+.vinyl-grooves {
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 30%,
+      rgba(255, 255, 255, 0.03) 31%,
+      transparent 32%
+    ),
+    repeating-radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.04) 0px,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 2px,
+      transparent 5px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 45%,
+      rgba(255, 255, 255, 0.05) 55%,
+      transparent 100%
+    );
 }
 
 @media (prefers-reduced-motion: reduce) {
