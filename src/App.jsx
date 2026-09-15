@@ -143,6 +143,8 @@ function App() {
     (_result, indexInResults) => {
       setIsQueueOpen(false)
       playQueue(youtubeResults.map(toQueueTrack), indexInResults)
+      // Auto-switch to My Records so user immediately sees their record spinning on the gramophone
+      setLibraryTab('local')
     },
     [playQueue, youtubeResults],
   )
@@ -169,7 +171,7 @@ function App() {
   })
 
   return (
-    <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1500px] flex-col overflow-hidden px-4 py-3 sm:px-6">
+    <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1700px] flex-col overflow-hidden px-4 py-3 sm:px-6">
       {/* Pinned Top Bar */}
       <header className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-cozy-brass/15 pb-3">
         <Brandmark />
@@ -208,17 +210,18 @@ function App() {
         </div>
       </header>
 
-      {/* Screen-Fit Main Split (Zero full-page scroll) */}
-      <main className="grid flex-1 min-h-0 grid-cols-1 gap-5 pt-3 lg:grid-cols-[380px_1fr] xl:grid-cols-[420px_1fr] overflow-hidden">
-        {/* Left: The Gramophone Cabinet (Comfortably fitted) */}
+      {/* Screen-Fit Main Split: Gramophone Console takes prominent stage */}
+      <main className="grid flex-1 min-h-0 grid-cols-1 gap-6 pt-3 lg:grid-cols-[480px_1fr] xl:grid-cols-[540px_1fr] 2xl:grid-cols-[600px_1fr] overflow-hidden">
+        {/* Left: The Gramophone Cabinet (Large, prominent, cohesive spacing) */}
         <aside
-          className="flex flex-col items-center justify-between gap-3 rounded-3xl p-5 shadow-cozy border border-cozy-brass/25 h-full max-h-full overflow-y-auto"
+          className="flex flex-col items-center justify-center gap-4 rounded-3xl p-6 shadow-cozy border border-cozy-brass/25 h-full max-h-full overflow-y-auto"
           style={{
             background:
               'linear-gradient(165deg, var(--color-cozy-wood), var(--color-cozy-wood-dark) 85%)',
           }}
         >
-          <div className="w-full max-w-[280px] sm:max-w-[300px] xl:max-w-[330px] mx-auto shrink-0">
+          {/* Turntable Platter (Prominent and large) */}
+          <div className="w-full max-w-[360px] sm:max-w-[400px] xl:max-w-[440px] 2xl:max-w-[480px] mx-auto shrink-0">
             <Turntable
               isPlaying={isPlaying}
               albumArtUrl={currentTrack?.pictureUrl}
@@ -230,7 +233,8 @@ function App() {
 
           <YouTubePlayerMount onMount={mountYouTubePlayer} />
 
-          <div className="w-full flex flex-col gap-3 shrink-0">
+          {/* Controls & Now Playing: tightly clustered under turntable */}
+          <div className="w-full max-w-[400px] xl:max-w-[440px] flex flex-col items-center gap-2.5 shrink-0">
             <NowPlaying track={currentTrack} onToggleFavorite={toggleFavorite} />
             <PlayerControls
               isPlaying={isPlaying}
