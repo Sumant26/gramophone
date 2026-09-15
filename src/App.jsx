@@ -194,14 +194,15 @@ function App() {
   return (
     <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1700px] flex-col overflow-hidden px-4 py-3 sm:px-6">
       {/* Pinned Top Bar */}
-      <header className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-cozy-brass/15 pb-3">
-        <Brandmark />
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Theme Selector */}
+      <header className="flex flex-none items-center justify-between gap-4 border-b border-cozy-brass/15 pb-3">
+        {/* Left: Brandmark & Theme Selector */}
+        <div className="flex items-center gap-3">
+          <Brandmark />
+
           <div
             role="radiogroup"
             aria-label="Color theme"
-            className="flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface p-0.5 shadow-sm"
+            className="hidden sm:flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface p-0.5 shadow-sm"
           >
             {[
               { id: 'walnut', label: '🌰 Walnut' },
@@ -215,9 +216,9 @@ function App() {
                 aria-checked={theme === th.id}
                 onClick={() => setTheme(th.id)}
                 className={clsx(
-                  'rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                  'rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors',
                   theme === th.id
-                    ? 'bg-cozy-brass text-cozy-on-accent font-bold'
+                    ? 'bg-cozy-brass text-cozy-on-accent font-bold shadow-sm'
                     : 'text-cozy-ink-muted hover:text-cozy-ink',
                 )}
               >
@@ -225,40 +226,60 @@ function App() {
               </button>
             ))}
           </div>
+        </div>
 
+        {/* Center: Search Bar */}
+        <div className="flex-1 max-w-md hidden md:block">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        </div>
+
+        {/* Right: Quick Action Controls */}
+        <div className="flex items-center gap-2">
+          <div className="block md:hidden">
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          </div>
+
+          {/* Soundscapes Ambience Button */}
+          <button
+            type="button"
+            aria-pressed={isAmbienceOpen}
+            aria-label="Toggle Soundscape Ambience Mixer"
+            onClick={() => setIsAmbienceOpen((v) => !v)}
+            title="Cozy Ambience Mixer (Rain, Fire, Cafe)"
+            className={clsx(
+              'flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold shadow-sm transition-all active:scale-95',
+              isAmbienceOpen
+                ? 'border-cozy-brass bg-cozy-brass text-cozy-on-accent'
+                : 'border-cozy-brass/30 bg-cozy-surface-2 text-cozy-ink hover:bg-cozy-brass/10',
+            )}
+          >
+            <span>🌧️</span>
+            <span className="hidden sm:inline">Ambience</span>
+          </button>
+
+          {/* Zen Lounge Fullscreen Mode */}
+          <button
+            type="button"
+            aria-label="Open Zen Fullscreen Lounge"
+            onClick={() => setIsZenModeOpen(true)}
+            title="Fullscreen Zen Listening Lounge"
+            className="flex h-9 items-center gap-1.5 rounded-full border border-cozy-brass/30 bg-cozy-surface-2 px-3 text-xs font-semibold text-cozy-ink shadow-sm transition-all hover:bg-cozy-brass/10 active:scale-95"
+          >
+            <span>🕯️</span>
+            <span className="hidden sm:inline">Zen Mode</span>
+          </button>
+
           <FolderPicker
             isScanning={isScanning}
             onFilesSelected={addFiles}
             onDirectorySelected={addFromDirectory}
           />
 
-          {/* Soundscapes Ambience Button */}
-          <Button
-            size="sm"
-            active={isAmbienceOpen}
-            aria-pressed={isAmbienceOpen}
-            aria-label="Toggle Soundscape Ambience Mixer"
-            onClick={() => setIsAmbienceOpen((v) => !v)}
-            title="Cozy Ambience Mixer (Rain, Fire, Cafe)"
-          >
-            <span className="text-xs">🌧️ Ambience</span>
-          </Button>
-
-          {/* Zen Lounge Fullscreen Mode */}
-          <Button
-            size="sm"
-            aria-label="Open Zen Fullscreen Lounge"
-            onClick={() => setIsZenModeOpen(true)}
-            title="Fullscreen Zen Listening Lounge"
-          >
-            <span className="text-xs">🕯️ Zen Mode</span>
-          </Button>
-
           <SleepTimer
             sleepTimerMinutes={sleepTimerMinutes}
             onSetSleepTimer={setSleepTimer}
           />
+
           {!isYouTubeTrack && (
             <Button
               size="sm"
@@ -271,6 +292,7 @@ function App() {
               <Icon name="vinylDrop" size={16} />
             </Button>
           )}
+
           <Button
             size="sm"
             active={isQueueOpen}

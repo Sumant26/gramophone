@@ -181,6 +181,16 @@ export function Turntable({
           </div>
         </div>
 
+        {/* Vacuum Tube Amp Mounted on Plinth Corner */}
+        <div className="absolute right-[4%] top-[3%] z-10 hidden sm:block">
+          <VacuumTube
+            size="sm"
+            isActive={tubeWarmthEnabled}
+            isPlaying={isPlaying}
+            onToggle={onToggleTubeWarmth}
+          />
+        </div>
+
         {/* Tonearm Resting Cradle (Pin Rest) */}
         <div
           className="absolute right-[5.5%] top-[48%] z-10 flex h-6 w-5 flex-col items-center justify-center rounded-sm border border-cozy-brass/40 bg-gradient-to-b from-cozy-wood to-cozy-wood-dark shadow-md"
@@ -238,84 +248,94 @@ export function Turntable({
         </motion.div>
       </div>
 
-      {/* Deck Lower Controls: RPM Selector, Vinyl Finish Selector, and Vacuum Tube */}
-      <div className="mt-3 flex w-full items-center justify-between gap-2 px-2">
+      {/* Recessed Brushed Brass Deck Switchplate */}
+      <div className="mt-2.5 flex w-full items-center justify-between gap-3 rounded-2xl border border-cozy-brass/20 bg-cozy-surface-2/60 px-3.5 py-1.5 shadow-inner backdrop-blur-sm">
         {/* RPM Speed Selector */}
-        <div
-          role="radiogroup"
-          aria-label="Platter RPM speed"
-          className="flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface-2/80 p-1 shadow-inner"
-        >
-          {[33, 45, 78].map((speed) => (
-            <button
-              key={speed}
-              type="button"
-              role="radio"
-              aria-checked={rpmSpeed === speed}
-              onClick={() => onSetRpmSpeed?.(speed)}
-              className={clsx(
-                'rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all',
-                rpmSpeed === speed
-                  ? 'bg-cozy-brass text-cozy-on-accent shadow-sm'
-                  : 'text-cozy-ink-muted hover:text-cozy-ink hover:bg-cozy-brass/10',
-              )}
-            >
-              {speed === 33 ? '33⅓' : speed === 78 ? '78 Lo-Fi' : '45'}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-cozy-ink-muted/70">
+            Speed
+          </span>
+          <div
+            role="radiogroup"
+            aria-label="Platter RPM speed"
+            className="flex items-center gap-1 rounded-full border border-cozy-brass/20 bg-cozy-surface/80 p-0.5"
+          >
+            {[33, 45, 78].map((speed) => (
+              <button
+                key={speed}
+                type="button"
+                role="radio"
+                aria-checked={rpmSpeed === speed}
+                onClick={() => onSetRpmSpeed?.(speed)}
+                className={clsx(
+                  'rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all',
+                  rpmSpeed === speed
+                    ? 'bg-cozy-brass text-cozy-on-accent shadow-sm'
+                    : 'text-cozy-ink-muted hover:text-cozy-ink hover:bg-cozy-brass/10',
+                )}
+              >
+                {speed === 33 ? '33⅓' : speed === 78 ? '78 Lo-Fi' : '45'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Vinyl Finish Picker */}
         {onSetVinylStyle && (
-          <div
-            role="radiogroup"
-            aria-label="Vinyl record style"
-            className="flex items-center gap-1.5 rounded-full border border-cozy-brass/25 bg-cozy-surface-2/80 px-2 py-1 shadow-inner"
-          >
-            {[
-              {
-                id: 'black',
-                title: 'Classic Black',
-                bg: 'bg-zinc-900 border-zinc-700',
-              },
-              {
-                id: 'amber',
-                title: 'Translucent Amber',
-                bg: 'bg-amber-600 border-amber-400',
-              },
-              {
-                id: 'marble',
-                title: 'Smoky Marble',
-                bg: 'bg-stone-500 border-stone-300',
-              },
-              {
-                id: 'picture',
-                title: 'Picture Disc',
-                bg: 'bg-orange-400 border-yellow-200',
-              },
-            ].map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                role="radio"
-                aria-checked={vinylStyle === v.id}
-                onClick={() => onSetVinylStyle(v.id)}
-                title={v.title}
-                aria-label={v.title}
-                className={clsx(
-                  'h-3.5 w-3.5 rounded-full border transition-all',
-                  v.bg,
-                  vinylStyle === v.id
-                    ? 'ring-2 ring-cozy-brass scale-110'
-                    : 'opacity-70 hover:opacity-100',
-                )}
-              />
-            ))}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-cozy-ink-muted/70">
+              Vinyl
+            </span>
+            <div
+              role="radiogroup"
+              aria-label="Vinyl record style"
+              className="flex items-center gap-1.5 rounded-full border border-cozy-brass/20 bg-cozy-surface/80 px-2 py-0.5"
+            >
+              {[
+                {
+                  id: 'black',
+                  title: 'Classic Black',
+                  bg: 'bg-zinc-900 border-zinc-700',
+                },
+                {
+                  id: 'amber',
+                  title: 'Translucent Amber',
+                  bg: 'bg-amber-600 border-amber-400',
+                },
+                {
+                  id: 'marble',
+                  title: 'Smoky Marble',
+                  bg: 'bg-stone-500 border-stone-300',
+                },
+                {
+                  id: 'picture',
+                  title: 'Picture Disc',
+                  bg: 'bg-orange-400 border-yellow-200',
+                },
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={vinylStyle === v.id}
+                  onClick={() => onSetVinylStyle(v.id)}
+                  title={v.title}
+                  aria-label={v.title}
+                  className={clsx(
+                    'h-3 w-3 rounded-full border transition-all',
+                    v.bg,
+                    vinylStyle === v.id
+                      ? 'ring-2 ring-cozy-brass scale-110'
+                      : 'opacity-70 hover:opacity-100',
+                  )}
+                />
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Vacuum Tube Amp Warmth */}
-        <div className="flex items-center pl-1">
+        {/* Mobile Tube fallback */}
+        <div className="block sm:hidden">
           <VacuumTube
             size="sm"
             isActive={tubeWarmthEnabled}
