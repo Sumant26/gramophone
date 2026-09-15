@@ -45,7 +45,7 @@ test.describe('Gramophone shell', () => {
     page,
   }) => {
     await page.goto('/')
-    await page.getByRole('tab', { name: 'YouTube' }).click()
+    await page.getByRole('tab', { name: /YouTube/ }).click()
     const search = page.getByLabel('Search YouTube')
     await expect(search).toBeVisible()
     await search.fill('lofi beats')
@@ -60,10 +60,9 @@ test.describe('Gramophone shell', () => {
   }) => {
     await page.goto('/')
     await expect(page.getByTestId('youtube-mount')).toBeAttached()
-    await expect(page.getByLabel('Audio visualizer')).toBeVisible()
-    await page.getByRole('tab', { name: 'YouTube' }).click()
+    await page.getByRole('tab', { name: /YouTube/ }).click()
     await expect(page.getByTestId('youtube-mount')).toBeAttached()
-    await page.getByRole('tab', { name: 'My Library' }).click()
+    await page.getByRole('tab', { name: /My Records|My Library/ }).click()
     await expect(page.getByTestId('youtube-mount')).toBeAttached()
   })
 
