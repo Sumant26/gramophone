@@ -41,7 +41,7 @@ export function PlayerControls({
         <span data-testid="duration">{formatTime(duration)}</span>
       </div>
 
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-1 sm:gap-2">
         <Button
           size="sm"
           active={shuffle}
@@ -49,7 +49,8 @@ export function PlayerControls({
           aria-pressed={shuffle}
           onClick={onToggleShuffle}
         >
-          <Icon name="shuffle" size={16} />
+          <Icon name="shuffle" size={14} className="sm:hidden" />
+          <Icon name="shuffle" size={16} className="hidden sm:inline" />
         </Button>
 
         <Button aria-label="Previous track" disabled={disabled} onClick={onPrevious}>
@@ -71,7 +72,18 @@ export function PlayerControls({
           disabled={disabled}
           onClick={onTogglePlayPause}
         >
-          <Icon name={isPlaying ? 'pause' : 'play'} size={26} filled />
+          <Icon
+            name={isPlaying ? 'pause' : 'play'}
+            size={20}
+            className="sm:hidden"
+            filled
+          />
+          <Icon
+            name={isPlaying ? 'pause' : 'play'}
+            size={26}
+            className="hidden sm:inline"
+            filled
+          />
         </Button>
 
         <Button
@@ -96,7 +108,16 @@ export function PlayerControls({
           aria-label={`Repeat: ${repeatMode}`}
           onClick={onCycleRepeat}
         >
-          <Icon name={repeatMode === 'one' ? 'repeatOne' : 'repeat'} size={16} />
+          <Icon
+            name={repeatMode === 'one' ? 'repeatOne' : 'repeat'}
+            size={14}
+            className="sm:hidden"
+          />
+          <Icon
+            name={repeatMode === 'one' ? 'repeatOne' : 'repeat'}
+            size={16}
+            className="hidden sm:inline"
+          />
         </Button>
       </div>
     </div>

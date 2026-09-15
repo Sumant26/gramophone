@@ -71,9 +71,7 @@ export function Turntable({
       ? 'vinyl-finish-amber'
       : vinylStyle === 'marble'
         ? 'vinyl-finish-marble'
-        : vinylStyle === 'picture'
-          ? 'vinyl-finish-picture'
-          : 'vinyl-finish-black'
+        : 'vinyl-finish-black'
 
   return (
     <div className="relative mx-auto flex w-full max-w-lg flex-col items-center select-none">
@@ -126,14 +124,6 @@ export function Turntable({
             vinylFinishClass,
             isPlaying && spinAnimationClass,
           )}
-          style={{
-            backgroundImage:
-              vinylStyle === 'picture' && albumArtUrl
-                ? `url(${albumArtUrl})`
-                : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
           data-testid="record"
           role="img"
           aria-label={
@@ -160,7 +150,7 @@ export function Turntable({
 
           {/* Center Label / Album Art */}
           <div className="absolute inset-[33%] overflow-hidden rounded-full border-[5px] border-cozy-brass-light shadow-lg">
-            {albumArtUrl && vinylStyle !== 'picture' ? (
+            {albumArtUrl ? (
               <img src={albumArtUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-cozy-wood to-cozy-wood-dark p-2 text-center text-[10px] font-serif-display italic text-cozy-brass-light">
@@ -249,16 +239,16 @@ export function Turntable({
       </div>
 
       {/* Recessed Brushed Brass Deck Switchplate */}
-      <div className="mt-2.5 flex w-full items-center justify-between gap-3 rounded-2xl border border-cozy-brass/20 bg-cozy-surface-2/60 px-3.5 py-1.5 shadow-inner backdrop-blur-sm">
+      <div className="mt-2.5 flex w-full flex-wrap items-center justify-center sm:justify-between gap-2 rounded-2xl border border-cozy-brass/20 bg-cozy-surface-2/60 px-2.5 py-1.5 shadow-inner backdrop-blur-sm">
         {/* RPM Speed Selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-mono uppercase tracking-wider text-cozy-ink-muted/70">
             Speed
           </span>
           <div
             role="radiogroup"
             aria-label="Platter RPM speed"
-            className="flex items-center gap-1 rounded-full border border-cozy-brass/20 bg-cozy-surface/80 p-0.5"
+            className="flex items-center gap-0.5 rounded-full border border-cozy-brass/20 bg-cozy-surface/80 p-0.5"
           >
             {[33, 45, 78].map((speed) => (
               <button
@@ -268,7 +258,7 @@ export function Turntable({
                 aria-checked={rpmSpeed === speed}
                 onClick={() => onSetRpmSpeed?.(speed)}
                 className={clsx(
-                  'rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all',
+                  'rounded-full px-2 py-0.5 text-[10px] font-semibold transition-all',
                   rpmSpeed === speed
                     ? 'bg-cozy-brass text-cozy-on-accent shadow-sm'
                     : 'text-cozy-ink-muted hover:text-cozy-ink hover:bg-cozy-brass/10',
@@ -306,11 +296,6 @@ export function Turntable({
                   id: 'marble',
                   title: 'Smoky Marble',
                   bg: 'bg-stone-500 border-stone-300',
-                },
-                {
-                  id: 'picture',
-                  title: 'Picture Disc',
-                  bg: 'bg-orange-400 border-yellow-200',
                 },
               ].map((v) => (
                 <button

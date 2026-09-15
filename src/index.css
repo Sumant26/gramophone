@@ -63,6 +63,8 @@ html,
 body,
 #root {
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -120,10 +122,6 @@ body {
   background:
     radial-gradient(circle at center, rgba(230, 210, 190, 0.12) 0%, transparent 70%),
     repeating-linear-gradient(45deg, #18110e, #291b14 15px, #120b08 30px, #3a251b 45px);
-}
-
-.vinyl-finish-picture {
-  background: #0d0908;
 }
 
 /* Subtle vinyl shine highlight */

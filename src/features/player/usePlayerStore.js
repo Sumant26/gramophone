@@ -57,7 +57,7 @@ export const usePlayerStore = create((set, get) => {
     shuffle: false,
     crackleEnabled: false,
     rpmSpeed: 33, // 33 | 45 | 78
-    vinylStyle: 'black', // 'black' | 'amber' | 'marble' | 'picture'
+    vinylStyle: 'black', // 'black' | 'amber' | 'marble'
     tubeWarmthEnabled: false,
     ambienceVolumes: {
       rain: 0,

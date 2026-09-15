@@ -192,17 +192,17 @@ function App() {
   })
 
   return (
-    <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1700px] flex-col overflow-hidden px-4 py-3 sm:px-6">
+    <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1700px] flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-3">
       {/* Pinned Top Bar */}
-      <header className="flex flex-none items-center justify-between gap-4 border-b border-cozy-brass/15 pb-3">
+      <header className="flex flex-none flex-wrap items-center justify-between gap-2 sm:gap-4 border-b border-cozy-brass/15 pb-2.5 sm:pb-3 max-w-full">
         {/* Left: Brandmark & Theme Selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Brandmark />
 
           <div
             role="radiogroup"
             aria-label="Color theme"
-            className="hidden sm:flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface p-0.5 shadow-sm"
+            className="hidden lg:flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface p-0.5 shadow-sm"
           >
             {[
               { id: 'walnut', label: '🌰 Walnut' },
@@ -228,17 +228,8 @@ function App() {
           </div>
         </div>
 
-        {/* Center: Search Bar */}
-        <div className="flex-1 max-w-md hidden md:block">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        </div>
-
         {/* Right: Quick Action Controls */}
-        <div className="flex items-center gap-2">
-          <div className="block md:hidden">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          </div>
-
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Soundscapes Ambience Button */}
           <button
             type="button"
@@ -247,14 +238,14 @@ function App() {
             onClick={() => setIsAmbienceOpen((v) => !v)}
             title="Cozy Ambience Mixer (Rain, Fire, Cafe)"
             className={clsx(
-              'flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold shadow-sm transition-all active:scale-95',
+              'flex h-8 sm:h-9 items-center gap-1.5 rounded-full border px-2 sm:px-3 text-xs font-semibold shadow-sm transition-all active:scale-95',
               isAmbienceOpen
                 ? 'border-cozy-brass bg-cozy-brass text-cozy-on-accent'
                 : 'border-cozy-brass/30 bg-cozy-surface-2 text-cozy-ink hover:bg-cozy-brass/10',
             )}
           >
             <span>🌧️</span>
-            <span className="hidden sm:inline">Ambience</span>
+            <span className="hidden md:inline">Ambience</span>
           </button>
 
           {/* Zen Lounge Fullscreen Mode */}
@@ -263,10 +254,10 @@ function App() {
             aria-label="Open Zen Fullscreen Lounge"
             onClick={() => setIsZenModeOpen(true)}
             title="Fullscreen Zen Listening Lounge"
-            className="flex h-9 items-center gap-1.5 rounded-full border border-cozy-brass/30 bg-cozy-surface-2 px-3 text-xs font-semibold text-cozy-ink shadow-sm transition-all hover:bg-cozy-brass/10 active:scale-95"
+            className="flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-cozy-brass/30 bg-cozy-surface-2 px-2 sm:px-3 text-xs font-semibold text-cozy-ink shadow-sm transition-all hover:bg-cozy-brass/10 active:scale-95"
           >
             <span>🕯️</span>
-            <span className="hidden sm:inline">Zen Mode</span>
+            <span className="hidden md:inline">Zen Mode</span>
           </button>
 
           <FolderPicker
@@ -275,10 +266,12 @@ function App() {
             onDirectorySelected={addFromDirectory}
           />
 
-          <SleepTimer
-            sleepTimerMinutes={sleepTimerMinutes}
-            onSetSleepTimer={setSleepTimer}
-          />
+          <div className="hidden sm:block">
+            <SleepTimer
+              sleepTimerMinutes={sleepTimerMinutes}
+              onSetSleepTimer={setSleepTimer}
+            />
+          </div>
 
           {!isYouTubeTrack && (
             <Button
@@ -303,13 +296,18 @@ function App() {
             <Icon name="queue" size={16} />
           </Button>
         </div>
+
+        {/* Center / Full-width on mobile: Search Bar */}
+        <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-xs md:max-w-md min-w-0">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        </div>
       </header>
 
       {/* Screen-Fit Main Split: Gramophone Console takes prominent stage */}
-      <main className="grid flex-1 min-h-0 grid-cols-1 gap-6 pt-3 lg:grid-cols-[480px_1fr] xl:grid-cols-[540px_1fr] 2xl:grid-cols-[600px_1fr] overflow-hidden">
+      <main className="grid flex-1 min-h-0 grid-cols-1 gap-4 lg:gap-6 pt-2 sm:pt-3 lg:grid-cols-[480px_1fr] xl:grid-cols-[540px_1fr] 2xl:grid-cols-[600px_1fr] overflow-hidden max-w-full">
         {/* Left: The Gramophone Cabinet (Large, prominent, cohesive spacing) */}
         <aside
-          className="flex flex-col items-center justify-center gap-4 rounded-3xl p-6 shadow-cozy border border-cozy-brass/25 h-full max-h-full overflow-y-auto"
+          className="flex flex-col items-center justify-start sm:justify-center gap-3 sm:gap-4 rounded-3xl p-3 sm:p-6 shadow-cozy border border-cozy-brass/25 h-full max-h-full overflow-y-auto overflow-x-hidden max-w-full"
           style={{
             background:
               'linear-gradient(165deg, var(--color-cozy-wood), var(--color-cozy-wood-dark) 85%)',

@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 
 const sizes = {
-  sm: 'h-9 w-9',
-  md: 'h-12 w-12',
-  lg: 'h-16 w-16',
+  sm: 'h-8 w-8 sm:h-9 sm:w-9',
+  md: 'h-9 w-9 sm:h-12 sm:w-12',
+  lg: 'h-11 w-11 sm:h-16 sm:w-16',
 }
 
 /**
