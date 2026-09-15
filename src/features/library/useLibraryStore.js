@@ -129,6 +129,52 @@ export const useLibraryStore = create((set, get) => ({
     if (track) await db.tracks.update(trackId, { isFavorite: track.isFavorite })
   },
 
+  async addYouTubeTrack(track) {
+    const record = {
+      id: track.id || `youtube:${track.videoId}`,
+      source: 'youtube',
+      videoId: track.videoId,
+      title: track.title,
+      artist: track.artist || 'YouTube Music',
+      album: track.album || track.title,
+      genre: 'Streaming',
+      pictureUrl: track.pictureUrl || null,
+      durationSeconds: track.durationSeconds || null,
+      addedAt: Date.now(),
+      playCount: 0,
+      lastPlayedAt: null,
+      isFavorite: false,
+    }
+    await get()._mergeAndPersist([record])
+  },
+
+  async addYouTubeAlbum(albumTitle, artist, results) {
+    const newTracks = results.map((result, idx) => ({
+      id: `youtube:${result.videoId}`,
+      source: 'youtube',
+      videoId: result.videoId,
+      title: result.title,
+      artist: artist || result.channelTitle || 'YouTube Artist',
+      album: albumTitle,
+      trackNumber: idx + 1,
+      genre: 'Streaming',
+      pictureUrl: result.thumbnailUrl || null,
+      durationSeconds: null,
+      addedAt: Date.now(),
+      playCount: 0,
+      lastPlayedAt: null,
+      isFavorite: false,
+    }))
+    await get()._mergeAndPersist(newTracks)
+  },
+
+  async removeTrack(trackId) {
+    set((state) => ({
+      tracks: state.tracks.filter((t) => t.id !== trackId),
+    }))
+    await db.tracks.delete(trackId)
+  },
+
   setSelectedCategory(categoryId) {
     set({ selectedCategoryId: categoryId })
   },

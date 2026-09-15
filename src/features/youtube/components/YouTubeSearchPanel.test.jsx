@@ -97,4 +97,31 @@ describe('YouTubeSearchPanel', () => {
       'text-cozy-accent',
     )
   })
+
+  it('calls onAddTrack when clicking Add to Crate button', async () => {
+    const onAddTrack = vi.fn()
+    render(
+      <YouTubeSearchPanel {...baseProps({ query: 'miles', results, onAddTrack })} />,
+    )
+    const addButtons = screen.getAllByRole('button', { name: /Add to Record Crate/i })
+    await userEvent.click(addButtons[0])
+    expect(onAddTrack).toHaveBeenCalledWith(results[0])
+  })
+
+  it('calls onAddAlbum when clicking Add All as Album to Crate button', async () => {
+    const onAddAlbum = vi.fn()
+    render(
+      <YouTubeSearchPanel
+        {...baseProps({ query: 'Miles Davis Album', results, onAddAlbum })}
+      />,
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Add All as Album to Crate/i }),
+    )
+    expect(onAddAlbum).toHaveBeenCalledWith(
+      'Miles Davis Album',
+      'Miles Davis - Topic',
+      results,
+    )
+  })
 })

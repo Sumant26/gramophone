@@ -92,6 +92,9 @@ function App() {
     loadFromDb,
     addFiles,
     addFromDirectory,
+    addYouTubeTrack,
+    addYouTubeAlbum,
+    removeTrack,
     toggleFavorite,
     setSelectedCategory,
     setSearchQuery,
@@ -126,6 +129,8 @@ function App() {
     return searchTracks(byCategory, searchQuery)
   }, [tracks, selectedCategoryId, searchQuery])
 
+  const savedTrackIds = useMemo(() => new Set(tracks.map((t) => t.id)), [tracks])
+
   const handlePlayTrack = useCallback(
     (_track, indexInVisibleList) => {
       setIsQueueOpen(false)
@@ -142,6 +147,14 @@ function App() {
     [playQueue, youtubeResults],
   )
 
+  const handleAddYouTubeTrackToLibrary = useCallback(
+    (result) => {
+      const queueTrack = toQueueTrack(result)
+      addYouTubeTrack(queueTrack)
+    },
+    [addYouTubeTrack],
+  )
+
   const isYouTubeTrack = currentTrack?.source === 'youtube'
 
   useKeyboardShortcuts({
@@ -156,8 +169,9 @@ function App() {
   })
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cozy-brass/15 pb-4">
+    <div className="mx-auto flex h-screen max-h-screen w-full max-w-[1500px] flex-col overflow-hidden px-4 py-3 sm:px-6">
+      {/* Pinned Top Bar */}
+      <header className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-cozy-brass/15 pb-3">
         <Brandmark />
         <div className="flex flex-wrap items-center gap-2">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -194,45 +208,52 @@ function App() {
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 gap-8 lg:grid-cols-[480px_1fr]">
-        {/* The Gramophone Cabinet */}
+      {/* Screen-Fit Main Split (Zero full-page scroll) */}
+      <main className="grid flex-1 min-h-0 grid-cols-1 gap-5 pt-3 lg:grid-cols-[380px_1fr] xl:grid-cols-[420px_1fr] overflow-hidden">
+        {/* Left: The Gramophone Cabinet (Comfortably fitted) */}
         <aside
-          className="flex flex-col items-center gap-5 rounded-3xl p-6 shadow-cozy sm:p-8 lg:sticky lg:top-6 lg:self-start border border-cozy-brass/25"
+          className="flex flex-col items-center justify-between gap-3 rounded-3xl p-5 shadow-cozy border border-cozy-brass/25 h-full max-h-full overflow-y-auto"
           style={{
             background:
               'linear-gradient(165deg, var(--color-cozy-wood), var(--color-cozy-wood-dark) 85%)',
           }}
         >
-          <Turntable
-            isPlaying={isPlaying}
-            albumArtUrl={currentTrack?.pictureUrl}
-            title={currentTrack?.title}
-            artist={currentTrack?.artist}
-            onTogglePlayPause={togglePlayPause}
-          />
+          <div className="w-full max-w-[280px] sm:max-w-[300px] xl:max-w-[330px] mx-auto shrink-0">
+            <Turntable
+              isPlaying={isPlaying}
+              albumArtUrl={currentTrack?.pictureUrl}
+              title={currentTrack?.title}
+              artist={currentTrack?.artist}
+              onTogglePlayPause={togglePlayPause}
+            />
+          </div>
+
           <YouTubePlayerMount onMount={mountYouTubePlayer} />
-          <NowPlaying track={currentTrack} onToggleFavorite={toggleFavorite} />
-          <PlayerControls
-            isPlaying={isPlaying}
-            position={position}
-            duration={duration}
-            shuffle={shuffle}
-            repeatMode={repeatMode}
-            disabled={!currentTrack || isLoading}
-            onTogglePlayPause={togglePlayPause}
-            onStop={stop}
-            onNext={next}
-            onPrevious={previous}
-            onSkipForward={skipForward}
-            onSkipBackward={skipBackward}
-            onSeek={seekTo}
-            onToggleShuffle={toggleShuffle}
-            onCycleRepeat={cycleRepeatMode}
-          />
-          <VolumeKnob value={volume} onChange={setVolume} />
+
+          <div className="w-full flex flex-col gap-3 shrink-0">
+            <NowPlaying track={currentTrack} onToggleFavorite={toggleFavorite} />
+            <PlayerControls
+              isPlaying={isPlaying}
+              position={position}
+              duration={duration}
+              shuffle={shuffle}
+              repeatMode={repeatMode}
+              disabled={!currentTrack || isLoading}
+              onTogglePlayPause={togglePlayPause}
+              onStop={stop}
+              onNext={next}
+              onPrevious={previous}
+              onSkipForward={skipForward}
+              onSkipBackward={skipBackward}
+              onSeek={seekTo}
+              onToggleShuffle={toggleShuffle}
+              onCycleRepeat={cycleRepeatMode}
+            />
+            <VolumeKnob value={volume} onChange={setVolume} />
+          </div>
 
           {isQueueOpen && (
-            <div className="w-full rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20">
+            <div className="w-full rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20 shrink-0">
               <QueuePanel
                 queue={queue}
                 queueIndex={queueIndex}
@@ -243,9 +264,13 @@ function App() {
           )}
         </aside>
 
-        {/* The Music Collection / Search Area */}
-        <section aria-label="Your library" className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {/* Right: The Music Collection & Search (Scrolls cleanly internally) */}
+        <section
+          aria-label="Your library"
+          className="flex flex-col h-full min-h-0 overflow-hidden"
+        >
+          {/* Header Controls */}
+          <div className="mb-3 flex flex-none flex-wrap items-center justify-between gap-3">
             <div
               role="tablist"
               aria-label="Music source"
@@ -264,7 +289,7 @@ function App() {
                 )}
               >
                 <Icon name="folder" size={14} />
-                My Records
+                My Records ({tracks.length})
               </button>
               <button
                 type="button"
@@ -279,7 +304,7 @@ function App() {
                 )}
               >
                 <Icon name="broadcast" size={14} />
-                YouTube
+                YouTube Search
               </button>
             </div>
 
@@ -322,49 +347,56 @@ function App() {
             )}
           </div>
 
-          {libraryTab === 'local' ? (
-            <>
-              <CategoryRail
-                categories={categories}
-                selectedCategoryId={selectedCategoryId}
-                onSelect={setSelectedCategory}
-              />
-              <div className="mt-3">
-                {libraryViewMode === 'crates' ? (
-                  <AlbumCrateView
-                    tracks={visibleTracks}
-                    currentTrackId={currentTrack?.id}
-                    isPlaying={isPlaying}
-                    onPlayTrack={handlePlayTrack}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                ) : (
-                  <div className="rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20">
-                    <TrackList
+          {/* Internally Scrollable Records / YouTube Panel */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+            {libraryTab === 'local' ? (
+              <div className="flex flex-col gap-3">
+                <CategoryRail
+                  categories={categories}
+                  selectedCategoryId={selectedCategoryId}
+                  onSelect={setSelectedCategory}
+                />
+                <div>
+                  {libraryViewMode === 'crates' ? (
+                    <AlbumCrateView
                       tracks={visibleTracks}
                       currentTrackId={currentTrack?.id}
                       isPlaying={isPlaying}
                       onPlayTrack={handlePlayTrack}
                       onToggleFavorite={toggleFavorite}
+                      onRemoveTrack={removeTrack}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20">
+                      <TrackList
+                        tracks={visibleTracks}
+                        currentTrackId={currentTrack?.id}
+                        isPlaying={isPlaying}
+                        onPlayTrack={handlePlayTrack}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="rounded-2xl bg-cozy-surface p-4 shadow-md border border-cozy-brass/20">
-              <YouTubeSearchPanel
-                query={youtubeQuery}
-                results={youtubeResults}
-                isSearching={isSearchingYouTube}
-                errorMessage={youtubeErrorMessage}
-                currentTrackId={currentTrack?.id}
-                isPlaying={isPlaying}
-                onQueryChange={setYouTubeQuery}
-                onPlayResult={handlePlayYouTubeResult}
-              />
-            </div>
-          )}
+            ) : (
+              <div className="rounded-2xl bg-cozy-surface p-4 shadow-md border border-cozy-brass/20">
+                <YouTubeSearchPanel
+                  query={youtubeQuery}
+                  results={youtubeResults}
+                  isSearching={isSearchingYouTube}
+                  errorMessage={youtubeErrorMessage}
+                  currentTrackId={currentTrack?.id}
+                  isPlaying={isPlaying}
+                  onQueryChange={setYouTubeQuery}
+                  onPlayResult={handlePlayYouTubeResult}
+                  onAddTrack={handleAddYouTubeTrackToLibrary}
+                  onAddAlbum={addYouTubeAlbum}
+                  savedTrackIds={savedTrackIds}
+                />
+              </div>
+            )}
+          </div>
         </section>
       </main>
     </div>

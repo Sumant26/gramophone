@@ -14,6 +14,7 @@ export function AlbumCrateView({
   isPlaying,
   onPlayTrack,
   onToggleFavorite,
+  onRemoveTrack,
 }) {
   const [expandedAlbumKey, setExpandedAlbumKey] = useState(null)
 
@@ -32,6 +33,7 @@ export function AlbumCrateView({
           title: albumTitle,
           artist: artistName,
           coverUrl: track.pictureUrl || null,
+          isYouTube: track.source === 'youtube',
           tracks: [],
         })
       }
@@ -280,13 +282,13 @@ export function AlbumCrateView({
                                 }
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  onToggleFavorite(track.id)
+                                  onToggleFavorite?.(track.id)
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    onToggleFavorite(track.id)
+                                    onToggleFavorite?.(track.id)
                                   }
                                 }}
                                 className="shrink-0 p-0.5 text-cozy-ink-muted hover:text-cozy-accent"
@@ -297,6 +299,28 @@ export function AlbumCrateView({
                                   filled={track.isFavorite}
                                 />
                               </span>
+                              {onRemoveTrack && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label={`Remove ${track.title} from crate`}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onRemoveTrack(track.id)
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      onRemoveTrack(track.id)
+                                    }
+                                  }}
+                                  className="shrink-0 p-0.5 text-cozy-ink-muted hover:text-red-400 opacity-50 hover:opacity-100 transition-opacity"
+                                  title="Remove from crate"
+                                >
+                                  <Icon name="close" size={11} />
+                                </span>
+                              )}
                             </button>
                           </li>
                         )

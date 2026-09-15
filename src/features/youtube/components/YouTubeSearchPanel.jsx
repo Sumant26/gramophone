@@ -4,9 +4,8 @@ import { Icon } from '@/shared/components/Icon'
 
 /**
  * The "YouTube" library tab: a search box over official YouTube Data API
- * v3 results and a results list styled to match TrackList.
- * When a song is selected and played, the large search results list collapses
- * so it doesn't obstruct the turntable and player interface.
+ * v3 results, with controls to stream directly or add albums/tracks to
+ * the user's permanent Record Crate collection.
  */
 export function YouTubeSearchPanel({
   query,
@@ -17,12 +16,32 @@ export function YouTubeSearchPanel({
   isPlaying,
   onQueryChange,
   onPlayResult,
+  onAddTrack,
+  onAddAlbum,
+  savedTrackIds = new Set(),
 }) {
   const [isResultsHidden, setIsResultsHidden] = useState(false)
+  const [albumAddedNotification, setAlbumAddedNotification] = useState(null)
 
   const handleSelectResult = (result, index) => {
     setIsResultsHidden(true)
-    onPlayResult(result, index)
+    onPlayResult?.(result, index)
+  }
+
+  const handleAddAllAsAlbum = () => {
+    if (!results.length) return
+    const albumName = query.trim() || 'YouTube Collection'
+    const artistName = results[0]?.channelTitle || 'YouTube'
+    onAddAlbum?.(albumName, artistName, results)
+    setAlbumAddedNotification(`Added "${albumName}" to your Record Crate!`)
+    setTimeout(() => setAlbumAddedNotification(null), 3500)
+  }
+
+  const handleAddSingleTrack = (e, result) => {
+    e.stopPropagation()
+    onAddTrack?.(result)
+    setAlbumAddedNotification(`Added "${result.title}" to Record Crate!`)
+    setTimeout(() => setAlbumAddedNotification(null), 3000)
   }
 
   // Find currently active playing YouTube result if available
@@ -35,7 +54,7 @@ export function YouTubeSearchPanel({
         <input
           type="search"
           aria-label="Search YouTube"
-          placeholder="Search YouTube for songs, albums, live sessions…"
+          placeholder="Search YouTube for albums, artists, tracks…"
           value={query}
           onChange={(e) => {
             setIsResultsHidden(false)
@@ -58,6 +77,18 @@ export function YouTubeSearchPanel({
         )}
       </div>
 
+      {albumAddedNotification && (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-cozy-brass/40 bg-cozy-brass/15 px-3 py-2 text-xs font-medium text-cozy-brass-light animate-in fade-in slide-in-from-top-1">
+          <span className="flex items-center gap-1.5 truncate">
+            <Icon name="vinylDrop" size={14} />
+            {albumAddedNotification}
+          </span>
+          <span className="shrink-0 text-[11px] text-cozy-ink-muted">
+            Saved to My Records
+          </span>
+        </div>
+      )}
+
       {errorMessage && (
         <p role="alert" className="text-sm text-cozy-accent">
           {errorMessage}
@@ -74,7 +105,8 @@ export function YouTubeSearchPanel({
 
       {!errorMessage && !query.trim() && (
         <p className="text-sm text-cozy-ink-muted">
-          Search YouTube&rsquo;s Music category and play a result on the turntable.
+          Search YouTube for songs, albums, and artists to play or add into your Record
+          Crate.
         </p>
       )}
 
@@ -124,52 +156,95 @@ export function YouTubeSearchPanel({
         </div>
       )}
 
-      {/* Search results list */}
+      {/* Search results list with Add Album & Add Track actions */}
       {!isResultsHidden && results.length > 0 && (
-        <ul className="divide-y divide-cozy-brass/15" aria-label="YouTube results">
-          {results.map((result, index) => {
-            const trackId = `youtube:${result.videoId}`
-            const isCurrent = trackId === currentTrackId
-            return (
-              <li key={result.videoId}>
-                <button
-                  type="button"
-                  onClick={() => handleSelectResult(result, index)}
-                  className={clsx(
-                    'flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-cozy-brass/10',
-                    isCurrent && 'bg-cozy-brass/15',
-                  )}
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-cozy-surface-2">
-                    {result.thumbnailUrl ? (
-                      <img
-                        src={result.thumbnailUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Icon name="broadcast" size={16} />
+        <div className="flex flex-col gap-2">
+          {/* Header Action Bar */}
+          <div className="flex items-center justify-between gap-2 border-b border-cozy-brass/15 pb-2">
+            <span className="text-xs text-cozy-ink-muted">
+              {results.length} {results.length === 1 ? 'result' : 'results'}
+            </span>
+            <button
+              type="button"
+              onClick={handleAddAllAsAlbum}
+              className="flex items-center gap-1.5 rounded-full border border-cozy-brass/40 bg-cozy-brass/15 px-3 py-1 text-xs font-semibold text-cozy-brass-light hover:bg-cozy-brass/25 transition-colors"
+              title="Save all search results as a vinyl record album in My Records"
+            >
+              <Icon name="vinylDrop" size={13} />
+              Add All as Album to Crate
+            </button>
+          </div>
+
+          <ul className="divide-y divide-cozy-brass/15" aria-label="YouTube results">
+            {results.map((result, index) => {
+              const trackId = `youtube:${result.videoId}`
+              const isCurrent = trackId === currentTrackId
+              const isSaved = savedTrackIds.has(trackId)
+
+              return (
+                <li key={result.videoId} className="group/item flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectResult(result, index)}
+                    className={clsx(
+                      'flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-cozy-brass/10',
+                      isCurrent && 'bg-cozy-brass/15',
                     )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={clsx(
-                        'block truncate text-sm',
-                        isCurrent ? 'font-semibold text-cozy-accent' : 'text-cozy-ink',
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-cozy-surface-2 border border-cozy-brass/20">
+                      {result.thumbnailUrl ? (
+                        <img
+                          src={result.thumbnailUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Icon name="broadcast" size={16} />
                       )}
-                    >
-                      {result.title}
                     </span>
-                    <span className="block truncate text-xs text-cozy-ink-muted">
-                      {result.channelTitle}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={clsx(
+                          'block truncate text-sm',
+                          isCurrent
+                            ? 'font-semibold text-cozy-accent'
+                            : 'text-cozy-ink',
+                        )}
+                      >
+                        {result.title}
+                      </span>
+                      <span className="block truncate text-xs text-cozy-ink-muted">
+                        {result.channelTitle}
+                      </span>
                     </span>
-                  </span>
-                  {isCurrent && isPlaying && <Icon name="volume" size={14} />}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+                    {isCurrent && isPlaying && <Icon name="volume" size={14} />}
+                  </button>
+
+                  {/* Add single track to Crate button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleAddSingleTrack(e, result)}
+                    title={isSaved ? 'In your Record Crate' : 'Add to Record Crate'}
+                    aria-label={
+                      isSaved ? 'In your Record Crate' : 'Add to Record Crate'
+                    }
+                    className={clsx(
+                      'ml-1 shrink-0 rounded-lg px-2.5 py-1.5 text-xs transition-colors flex items-center gap-1',
+                      isSaved
+                        ? 'text-cozy-brass-light bg-cozy-brass/20 font-medium'
+                        : 'text-cozy-ink-muted hover:text-cozy-accent hover:bg-cozy-brass/10',
+                    )}
+                  >
+                    <Icon name="vinylDrop" size={13} />
+                    <span className="text-[11px] hidden sm:inline">
+                      {isSaved ? 'In Crate' : '✚ Crate'}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
     </div>
   )

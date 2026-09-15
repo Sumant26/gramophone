@@ -93,4 +93,44 @@ describe('useLibraryStore', () => {
     expect(useLibraryStore.getState().searchQuery).toBe('lofi')
     expect(useLibraryStore.getState().selectedCategoryId).toBe('genre:Jazz')
   })
+
+  it('addYouTubeTrack adds and persists a YouTube track', async () => {
+    await useLibraryStore.getState().addYouTubeTrack({
+      id: 'youtube:test123',
+      videoId: 'test123',
+      title: 'Jazz Session',
+      artist: 'Jazz Master',
+      album: 'Live at Tokyo',
+      pictureUrl: 'https://img/test.jpg',
+    })
+    const { tracks } = useLibraryStore.getState()
+    expect(tracks).toHaveLength(1)
+    expect(tracks[0].source).toBe('youtube')
+    expect(tracks[0].title).toBe('Jazz Session')
+    expect(db.tracks.bulkPut).toHaveBeenCalled()
+  })
+
+  it('addYouTubeAlbum adds multiple tracks as an album', async () => {
+    await useLibraryStore.getState().addYouTubeAlbum('Blue Notes', 'Miles Davis', [
+      { videoId: 'v1', title: 'Track 1', channelTitle: 'Miles Davis' },
+      { videoId: 'v2', title: 'Track 2', channelTitle: 'Miles Davis' },
+    ])
+    const { tracks } = useLibraryStore.getState()
+    expect(tracks).toHaveLength(2)
+    expect(tracks[0].album).toBe('Blue Notes')
+    expect(tracks[1].album).toBe('Blue Notes')
+  })
+
+  it('removeTrack deletes the track from store and DB', async () => {
+    db.tracks.delete = vi.fn().mockResolvedValue(undefined)
+    await useLibraryStore.getState().addYouTubeTrack({
+      id: 'youtube:toremove',
+      videoId: 'toremove',
+      title: 'To Remove',
+    })
+    expect(useLibraryStore.getState().tracks).toHaveLength(1)
+    await useLibraryStore.getState().removeTrack('youtube:toremove')
+    expect(useLibraryStore.getState().tracks).toHaveLength(0)
+    expect(db.tracks.delete).toHaveBeenCalledWith('youtube:toremove')
+  })
 })
