@@ -30,6 +30,35 @@
     0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Theme Overrides */
+[data-theme='maple'] {
+  --color-cozy-bg: #2d1f17;
+  --color-cozy-surface: #3b2a21;
+  --color-cozy-surface-2: #4a352a;
+  --color-cozy-wood: #5a3d2e;
+  --color-cozy-wood-dark: #38241a;
+  --color-cozy-brass: #e2ab63;
+  --color-cozy-brass-light: #fbe0ab;
+  --color-cozy-ink: #fff7f0;
+  --color-cozy-ink-muted: #d8c3b6;
+  --color-cozy-accent: #e57c4f;
+  --color-cozy-on-accent: #2c1309;
+}
+
+[data-theme='midnight'] {
+  --color-cozy-bg: #0c0908;
+  --color-cozy-surface: #15100e;
+  --color-cozy-surface-2: #1e1714;
+  --color-cozy-wood: #261611;
+  --color-cozy-wood-dark: #0f0705;
+  --color-cozy-brass: #ff9d3b;
+  --color-cozy-brass-light: #ffd285;
+  --color-cozy-ink: #f7ebe1;
+  --color-cozy-ink-muted: #a69186;
+  --color-cozy-accent: #ff6e26;
+  --color-cozy-on-accent: #170701;
+}
+
 html,
 body,
 #root {
@@ -61,8 +90,40 @@ body {
   }
 }
 
+.animate-spin-33 {
+  animation: spin-record 1.8s linear infinite;
+}
+
+.animate-spin-45 {
+  animation: spin-record 1.33s linear infinite;
+}
+
+.animate-spin-78 {
+  animation: spin-record 2.1s linear infinite;
+}
+
 .animate-spin-record {
   animation: spin-record 1.8s linear infinite;
+}
+
+/* Vinyl Finishes */
+.vinyl-finish-black {
+  background: radial-gradient(circle at center, #1b1411 0%, #0d0908 70%, #050303 100%);
+}
+
+.vinyl-finish-amber {
+  background: radial-gradient(circle at center, #c66c1b 0%, #833e07 60%, #451b03 100%);
+  box-shadow: 0 0 25px rgba(212, 120, 20, 0.25) inset;
+}
+
+.vinyl-finish-marble {
+  background:
+    radial-gradient(circle at center, rgba(230, 210, 190, 0.12) 0%, transparent 70%),
+    repeating-linear-gradient(45deg, #18110e, #291b14 15px, #120b08 30px, #3a251b 45px);
+}
+
+.vinyl-finish-picture {
+  background: #0d0908;
 }
 
 /* Subtle vinyl shine highlight */
@@ -90,8 +151,31 @@ body {
     );
 }
 
+/* Vacuum tube filament glow */
+@keyframes tube-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.75))
+      drop-shadow(0 0 14px rgba(255, 90, 20, 0.45));
+    opacity: 0.92;
+  }
+  50% {
+    filter: drop-shadow(0 0 9px rgba(255, 160, 50, 0.95))
+      drop-shadow(0 0 18px rgba(255, 100, 30, 0.6));
+    opacity: 1;
+  }
+}
+
+.animate-tube-glow {
+  animation: tube-glow 3s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-spin-record {
+  .animate-spin-33,
+  .animate-spin-45,
+  .animate-spin-78,
+  .animate-spin-record,
+  .animate-tube-glow {
     animation: none;
   }
 }

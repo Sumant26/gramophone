@@ -65,7 +65,7 @@ describe('AlbumCrateView', () => {
     expect(onPlayTrack).toHaveBeenCalledWith(SAMPLE_TRACKS[0], 0)
   })
 
-  it('toggles song list drawer when clicking View Songs', () => {
+  it('toggles song list drawer when clicking Songs button', () => {
     render(
       <AlbumCrateView
         tracks={SAMPLE_TRACKS}
@@ -75,8 +75,41 @@ describe('AlbumCrateView', () => {
       />,
     )
 
-    const viewSongsButtons = screen.getAllByRole('button', { name: /View Songs/i })
+    const viewSongsButtons = screen.getAllByRole('button', { name: /Songs/i })
     fireEvent.click(viewSongsButtons[0])
     expect(screen.getByText('So What')).toBeInTheDocument()
+  })
+
+  it('filters by Favorites divider tab', () => {
+    render(
+      <AlbumCrateView
+        tracks={SAMPLE_TRACKS}
+        currentTrackId={null}
+        isPlaying={false}
+        onPlayTrack={vi.fn()}
+      />,
+    )
+
+    const favTab = screen.getByRole('tab', { name: /Favorites/i })
+    fireEvent.click(favTab)
+    expect(screen.getAllByText('Kind of Blue').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('Blue Train')).not.toBeInTheDocument()
+  })
+
+  it('triggers onOpenGatefold when clicking Liner Notes', () => {
+    const onOpenGatefold = vi.fn()
+    render(
+      <AlbumCrateView
+        tracks={SAMPLE_TRACKS}
+        currentTrackId={null}
+        isPlaying={false}
+        onPlayTrack={vi.fn()}
+        onOpenGatefold={onOpenGatefold}
+      />,
+    )
+
+    const linerNotesButtons = screen.getAllByRole('button', { name: /Liner Notes/i })
+    fireEvent.click(linerNotesButtons[0])
+    expect(onOpenGatefold).toHaveBeenCalled()
   })
 })

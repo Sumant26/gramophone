@@ -39,6 +39,11 @@ export class AudioEngine {
     this.pausedAtOffset = 0
     this.volume = 1
     this.crackleEnabled = false
+    this.playbackRate = 1.0
+    this.tubeWarmthEnabled = false
+
+    this.warmthFilter = null
+    this.bassWarmthFilter = null
   }
 
   /** Lazily create the AudioContext. Must be called from a user-gesture handler on first use (browser autoplay policy). */
@@ -55,7 +60,20 @@ export class AudioEngine {
     this.analyser = this.context.createAnalyser()
     this.analyser.fftSize = 2048
 
-    this.trackGain.connect(this.analyser)
+    // Vintage Tube warmth filters (biquad lowpass warmth + subtle low-shelf boost)
+    this.warmthFilter = this.context.createBiquadFilter()
+    this.warmthFilter.type = 'lowpass'
+    this.warmthFilter.frequency.value = this.tubeWarmthEnabled ? 4800 : 20000
+    this.warmthFilter.Q.value = 0.8
+
+    this.bassWarmthFilter = this.context.createBiquadFilter()
+    this.bassWarmthFilter.type = 'lowshelf'
+    this.bassWarmthFilter.frequency.value = 140
+    this.bassWarmthFilter.gain.value = this.tubeWarmthEnabled ? 3.5 : 0
+
+    this.trackGain.connect(this.warmthFilter)
+    this.warmthFilter.connect(this.bassWarmthFilter)
+    this.bassWarmthFilter.connect(this.analyser)
     this.analyser.connect(this.masterGain)
     this.crackleGain.connect(this.masterGain)
     this.masterGain.connect(this.context.destination)
@@ -98,6 +116,7 @@ export class AudioEngine {
 
     const source = ctx.createBufferSource()
     source.buffer = this.buffer
+    source.playbackRate.value = this.playbackRate
     source.connect(this.trackGain)
     source.addEventListener('ended', this._handleEnded)
 
@@ -105,7 +124,7 @@ export class AudioEngine {
     source.start(0, safeOffset)
 
     this.source = source
-    this.startedAtContextTime = ctx.currentTime - safeOffset
+    this.startedAtContextTime = ctx.currentTime - safeOffset / this.playbackRate
     this.isPlaying = true
 
     if (this.crackleEnabled) this._startCrackle()
@@ -137,7 +156,8 @@ export class AudioEngine {
   getCurrentTime() {
     if (!this.buffer) return 0
     if (!this.isPlaying) return this.pausedAtOffset
-    const elapsed = this.context.currentTime - this.startedAtContextTime
+    const elapsed =
+      (this.context.currentTime - this.startedAtContextTime) * this.playbackRate
     return Math.min(elapsed, this.buffer.duration)
   }
 
@@ -147,9 +167,63 @@ export class AudioEngine {
 
   setVolume(value) {
     this.volume = Math.min(Math.max(value, 0), 1)
-    if (this.masterGain) {
+    if (this.masterGain && this.context) {
       this.masterGain.gain.setValueAtTime(this.volume, this.context.currentTime)
     }
+  }
+
+  setPlaybackRate(rate) {
+    this.playbackRate = Math.max(rate, 0.25)
+    if (this.source && this.context) {
+      this.source.playbackRate.setValueAtTime(
+        this.playbackRate,
+        this.context.currentTime,
+      )
+    }
+  }
+
+  setTubeWarmth(enabled) {
+    this.tubeWarmthEnabled = enabled
+    if (!this.context) return
+    const now = this.context.currentTime
+    if (this.warmthFilter) {
+      this.warmthFilter.frequency.cancelScheduledValues(now)
+      this.warmthFilter.frequency.linearRampToValueAtTime(
+        enabled ? 4800 : 20000,
+        now + CROSSFADE_SECONDS,
+      )
+    }
+    if (this.bassWarmthFilter) {
+      this.bassWarmthFilter.gain.cancelScheduledValues(now)
+      this.bassWarmthFilter.gain.linearRampToValueAtTime(
+        enabled ? 3.5 : 0,
+        now + CROSSFADE_SECONDS,
+      )
+    }
+  }
+
+  playNeedleDropEffect() {
+    if (!this.context) return
+    const ctx = this.ensureContext()
+    if (ctx.state === 'suspended') ctx.resume()
+    const now = ctx.currentTime
+
+    // Low-frequency vinyl needle drop thump
+    const osc = ctx.createOscillator()
+    const oscGain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(80, now)
+    osc.frequency.exponentialRampToValueAtTime(25, now + 0.1)
+
+    oscGain.gain.setValueAtTime(0, now)
+    oscGain.gain.linearRampToValueAtTime(0.3, now + 0.01)
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2)
+
+    osc.connect(oscGain)
+    oscGain.connect(this.masterGain)
+
+    osc.start(now)
+    osc.stop(now + 0.2)
   }
 
   setCrackleEnabled(enabled) {

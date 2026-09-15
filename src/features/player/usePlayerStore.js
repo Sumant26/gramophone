@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { AudioEngine } from './audioEngine'
+import { AmbienceEngine } from './ambienceEngine'
 import { YouTubeEngine } from '@/features/youtube/youtubeEngine'
 import { db } from '@/db/db'
 
@@ -15,14 +16,8 @@ function shuffleOrder(length) {
 }
 
 /**
- * Central playback state. Owns one AudioEngine instance (local files) and
- * one YouTubeEngine instance (streamed via the official IFrame API) for the
- * app's lifetime, and mirrors their state into React-observable store
- * fields. Every transport action (play/pause/next/previous/seek) goes
- * through here rather than touching either engine from components
- * directly. Which engine is "live" is decided per-track from
- * `currentTrack.source` ('local' by default, or 'youtube') — the two
- * engines never run at once.
+ * Central playback state. Owns one AudioEngine instance (local files),
+ * one AmbienceEngine (soundscapes), and one YouTubeEngine instance (streamed).
  */
 export const usePlayerStore = create((set, get) => {
   const localEngine = new AudioEngine({
@@ -30,13 +25,11 @@ export const usePlayerStore = create((set, get) => {
     onError: (err) => set({ error: err.message }),
   })
 
+  const ambienceEngine = new AmbienceEngine()
+
   const youtubeEngine = new YouTubeEngine({
     onEnded: () => get().handleTrackEnded(),
     onError: (err) => set({ error: err.message }),
-    // The user can also drive playback from YouTube's own on-screen
-    // controls, so mirror its reported state back — but only while a
-    // YouTube track is actually current, so a stale event from a
-    // previous video can't clobber local playback state.
     onPlayingChange: (isPlaying) => {
       if (get().currentTrack?.source === 'youtube') set({ isPlaying })
     },
@@ -49,6 +42,7 @@ export const usePlayerStore = create((set, get) => {
 
   return {
     localEngine,
+    ambienceEngine,
     youtubeEngine,
     queue: [], // array of track objects, in playback order
     queueIndex: -1,
@@ -62,8 +56,18 @@ export const usePlayerStore = create((set, get) => {
     repeatMode: 'off', // 'off' | 'all' | 'one'
     shuffle: false,
     crackleEnabled: false,
+    rpmSpeed: 33, // 33 | 45 | 78
+    vinylStyle: 'black', // 'black' | 'amber' | 'marble' | 'picture'
+    tubeWarmthEnabled: false,
+    ambienceVolumes: {
+      rain: 0,
+      fire: 0,
+      cafe: 0,
+    },
+    theme: 'walnut', // 'walnut' | 'maple' | 'midnight'
+    isZenModeOpen: false,
     sleepTimerEndsAt: null,
-    sleepTimerMinutes: 0, // the preset the user picked, for display (avoids recomputing from Date.now() in render)
+    sleepTimerMinutes: 0, // the preset the user picked, for display
     error: null,
 
     /** Replace the queue and start playing at `startIndex`. */
@@ -246,6 +250,51 @@ export const usePlayerStore = create((set, get) => {
         get().togglePlayPause()
         set({ sleepTimerEndsAt: null, sleepTimerMinutes: 0 })
       }
+    },
+
+    setRpmSpeed(speed) {
+      const validSpeeds = [33, 45, 78]
+      const rpm = validSpeeds.includes(speed) ? speed : 33
+      const playbackRate = rpm === 45 ? 1.35 : rpm === 78 ? 0.85 : 1.0
+      localEngine.setPlaybackRate(playbackRate)
+      set({ rpmSpeed: rpm })
+    },
+
+    setVinylStyle(style) {
+      set({ vinylStyle: style })
+    },
+
+    setTubeWarmth(enabled) {
+      localEngine.setTubeWarmth(enabled)
+      set({ tubeWarmthEnabled: enabled })
+    },
+
+    setAmbienceVolume(layer, volume) {
+      ambienceEngine.setLayerVolume(layer, volume)
+      set((state) => ({
+        ambienceVolumes: {
+          ...state.ambienceVolumes,
+          [layer]: volume,
+        },
+      }))
+    },
+
+    setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme)
+      set({ theme })
+    },
+
+    setIsZenModeOpen(open) {
+      set({ isZenModeOpen: open })
+    },
+
+    needleSeek(fraction) {
+      const { duration, currentTrack } = get()
+      if (!currentTrack || duration <= 0) return
+      const targetSeconds = Math.max(0, Math.min(fraction * duration, duration))
+      localEngine.playNeedleDropEffect()
+      ambienceEngine.playNeedleDrop(0.4)
+      get().seekTo(targetSeconds)
     },
 
     /**

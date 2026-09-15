@@ -41,6 +41,30 @@ describe('Turntable', () => {
 
   it('exposes an accessible label reflecting the current title', () => {
     render(<Turntable isPlaying title="Kind of Blue" artist="Miles Davis" />)
-    expect(screen.getByLabelText('Pause record: Kind of Blue')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Pause record: Kind of Blue/)).toBeInTheDocument()
+  })
+
+  it('handles RPM speed changes', () => {
+    const onSetRpmSpeed = vi.fn()
+    render(<Turntable isPlaying={false} rpmSpeed={33} onSetRpmSpeed={onSetRpmSpeed} />)
+
+    const rpm45Btn = screen.getByRole('radio', { name: '45' })
+    fireEvent.click(rpm45Btn)
+    expect(onSetRpmSpeed).toHaveBeenCalledWith(45)
+  })
+
+  it('handles vinyl style changes', () => {
+    const onSetVinylStyle = vi.fn()
+    render(
+      <Turntable
+        isPlaying={false}
+        vinylStyle="black"
+        onSetVinylStyle={onSetVinylStyle}
+      />,
+    )
+
+    const amberBtn = screen.getByRole('radio', { name: /Translucent Amber/i })
+    fireEvent.click(amberBtn)
+    expect(onSetVinylStyle).toHaveBeenCalledWith('amber')
   })
 })

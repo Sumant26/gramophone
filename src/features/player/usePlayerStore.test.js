@@ -124,4 +124,23 @@ describe('usePlayerStore', () => {
     usePlayerStore.getState().setSleepTimer(0)
     expect(usePlayerStore.getState().sleepTimerEndsAt).toBeNull()
   })
+
+  it('updates RPM speed and playback rate', () => {
+    usePlayerStore.getState().setRpmSpeed(45)
+    expect(usePlayerStore.getState().rpmSpeed).toBe(45)
+    usePlayerStore.getState().setRpmSpeed(78)
+    expect(usePlayerStore.getState().rpmSpeed).toBe(78)
+  })
+
+  it('updates vinyl style and tube warmth', () => {
+    usePlayerStore.getState().setVinylStyle('amber')
+    expect(usePlayerStore.getState().vinylStyle).toBe('amber')
+    usePlayerStore.getState().setTubeWarmth(true)
+    expect(usePlayerStore.getState().tubeWarmthEnabled).toBe(true)
+  })
+
+  it('updates ambience layer volumes', () => {
+    usePlayerStore.getState().setAmbienceVolume('rain', 0.7)
+    expect(usePlayerStore.getState().ambienceVolumes.rain).toBe(0.7)
+  })
 })

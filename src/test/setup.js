@@ -16,6 +16,7 @@ class MockAudioParam {
     this.value = value
   }
   linearRampToValueAtTime = vi.fn()
+  exponentialRampToValueAtTime = vi.fn()
   setValueAtTime = vi.fn()
   cancelScheduledValues = vi.fn()
 }
@@ -35,9 +36,28 @@ class MockGainNode {
   disconnect = vi.fn()
 }
 
+class MockBiquadFilterNode {
+  type = 'lowpass'
+  frequency = new MockAudioParam(1000)
+  Q = new MockAudioParam(1)
+  gain = new MockAudioParam(0)
+  connect = vi.fn()
+  disconnect = vi.fn()
+}
+
+class MockOscillatorNode {
+  type = 'sine'
+  frequency = new MockAudioParam(440)
+  connect = vi.fn()
+  disconnect = vi.fn()
+  start = vi.fn()
+  stop = vi.fn()
+}
+
 class MockAudioBufferSourceNode {
   buffer = null
   loop = false
+  playbackRate = new MockAudioParam(1)
   connect = vi.fn()
   disconnect = vi.fn()
   start = vi.fn()
@@ -48,9 +68,12 @@ class MockAudioBufferSourceNode {
 class MockAudioContext {
   state = 'running'
   currentTime = 0
+  sampleRate = 44100
   destination = {}
   createGain = vi.fn(() => new MockGainNode())
   createAnalyser = vi.fn(() => new MockAnalyserNode())
+  createBiquadFilter = vi.fn(() => new MockBiquadFilterNode())
+  createOscillator = vi.fn(() => new MockOscillatorNode())
   createBufferSource = vi.fn(() => new MockAudioBufferSourceNode())
   createBuffer = vi.fn((channels, length) => ({
     numberOfChannels: channels,

@@ -18,9 +18,13 @@ import { PlayerControls } from '@/features/player/components/PlayerControls'
 import { VolumeKnob } from '@/features/player/components/VolumeKnob'
 import { NowPlaying } from '@/features/player/components/NowPlaying'
 import { SleepTimer } from '@/features/player/components/SleepTimer'
+import { AmbienceMixer } from '@/features/player/components/AmbienceMixer'
+import { ZenTurntableModal } from '@/features/player/components/ZenTurntableModal'
 import { CategoryRail } from '@/features/categories/components/CategoryRail'
 import { TrackList } from '@/features/library/components/TrackList'
 import { AlbumCrateView } from '@/features/library/components/AlbumCrateView'
+import { GatefoldModal } from '@/features/library/components/GatefoldModal'
+import { MixtapeModal } from '@/features/library/components/MixtapeModal'
 import { SearchBar } from '@/features/library/components/SearchBar'
 import { FolderPicker } from '@/features/library/components/FolderPicker'
 import { QueuePanel } from '@/features/queue/components/QueuePanel'
@@ -50,6 +54,9 @@ function Brandmark() {
 
 function App() {
   const [isQueueOpen, setIsQueueOpen] = useState(false)
+  const [isAmbienceOpen, setIsAmbienceOpen] = useState(false)
+  const [gatefoldAlbum, setGatefoldAlbum] = useState(null)
+  const [isMixtapeOpen, setIsMixtapeOpen] = useState(false)
   const [libraryTab, setLibraryTab] = useState('local') // 'local' | 'youtube'
   const [libraryViewMode, setLibraryViewMode] = useState('crates') // 'crates' | 'list'
 
@@ -65,6 +72,12 @@ function App() {
     repeatMode,
     shuffle,
     crackleEnabled,
+    rpmSpeed,
+    vinylStyle,
+    tubeWarmthEnabled,
+    ambienceVolumes,
+    theme,
+    isZenModeOpen,
     sleepTimerMinutes,
     playQueue,
     playAtIndex,
@@ -79,6 +92,13 @@ function App() {
     toggleShuffle,
     cycleRepeatMode,
     toggleCrackle,
+    setRpmSpeed,
+    setVinylStyle,
+    setTubeWarmth,
+    setAmbienceVolume,
+    setTheme,
+    setIsZenModeOpen,
+    needleSeek,
     setSleepTimer,
     syncPosition,
     mountYouTubePlayer,
@@ -94,6 +114,7 @@ function App() {
     addFromDirectory,
     addYouTubeTrack,
     addYouTubeAlbum,
+    createMixtapeAlbum,
     removeTrack,
     toggleFavorite,
     setSelectedCategory,
@@ -176,12 +197,64 @@ function App() {
       <header className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-cozy-brass/15 pb-3">
         <Brandmark />
         <div className="flex flex-wrap items-center gap-2">
+          {/* Theme Selector */}
+          <div
+            role="radiogroup"
+            aria-label="Color theme"
+            className="flex items-center gap-1 rounded-full border border-cozy-brass/25 bg-cozy-surface p-0.5 shadow-sm"
+          >
+            {[
+              { id: 'walnut', label: '🌰 Walnut' },
+              { id: 'maple', label: '🍯 Maple' },
+              { id: 'midnight', label: '🕯️ Midnight' },
+            ].map((th) => (
+              <button
+                key={th.id}
+                type="button"
+                role="radio"
+                aria-checked={theme === th.id}
+                onClick={() => setTheme(th.id)}
+                className={clsx(
+                  'rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                  theme === th.id
+                    ? 'bg-cozy-brass text-cozy-on-accent font-bold'
+                    : 'text-cozy-ink-muted hover:text-cozy-ink',
+                )}
+              >
+                {th.label}
+              </button>
+            ))}
+          </div>
+
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <FolderPicker
             isScanning={isScanning}
             onFilesSelected={addFiles}
             onDirectorySelected={addFromDirectory}
           />
+
+          {/* Soundscapes Ambience Button */}
+          <Button
+            size="sm"
+            active={isAmbienceOpen}
+            aria-pressed={isAmbienceOpen}
+            aria-label="Toggle Soundscape Ambience Mixer"
+            onClick={() => setIsAmbienceOpen((v) => !v)}
+            title="Cozy Ambience Mixer (Rain, Fire, Cafe)"
+          >
+            <span className="text-xs">🌧️ Ambience</span>
+          </Button>
+
+          {/* Zen Lounge Fullscreen Mode */}
+          <Button
+            size="sm"
+            aria-label="Open Zen Fullscreen Lounge"
+            onClick={() => setIsZenModeOpen(true)}
+            title="Fullscreen Zen Listening Lounge"
+          >
+            <span className="text-xs">🕯️ Zen Mode</span>
+          </Button>
+
           <SleepTimer
             sleepTimerMinutes={sleepTimerMinutes}
             onSetSleepTimer={setSleepTimer}
@@ -220,14 +293,21 @@ function App() {
               'linear-gradient(165deg, var(--color-cozy-wood), var(--color-cozy-wood-dark) 85%)',
           }}
         >
-          {/* Turntable Platter (Prominent and large) */}
+          {/* Turntable Platter (Prominent, interactive, RPM + styles + tube) */}
           <div className="w-full max-w-[360px] sm:max-w-[400px] xl:max-w-[440px] 2xl:max-w-[480px] mx-auto shrink-0">
             <Turntable
               isPlaying={isPlaying}
               albumArtUrl={currentTrack?.pictureUrl}
               title={currentTrack?.title}
               artist={currentTrack?.artist}
+              rpmSpeed={rpmSpeed}
+              vinylStyle={vinylStyle}
+              tubeWarmthEnabled={tubeWarmthEnabled}
               onTogglePlayPause={togglePlayPause}
+              onNeedleSeek={needleSeek}
+              onSetRpmSpeed={setRpmSpeed}
+              onSetVinylStyle={setVinylStyle}
+              onToggleTubeWarmth={() => setTubeWarmth(!tubeWarmthEnabled)}
             />
           </div>
 
@@ -369,6 +449,8 @@ function App() {
                       onPlayTrack={handlePlayTrack}
                       onToggleFavorite={toggleFavorite}
                       onRemoveTrack={removeTrack}
+                      onOpenGatefold={(album) => setGatefoldAlbum(album)}
+                      onOpenMixtape={() => setIsMixtapeOpen(true)}
                     />
                   ) : (
                     <div className="rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20">
@@ -403,6 +485,65 @@ function App() {
           </div>
         </section>
       </main>
+
+      {/* Ambience Mixer Drawer */}
+      <AmbienceMixer
+        isOpen={isAmbienceOpen}
+        onClose={() => setIsAmbienceOpen(false)}
+        ambienceVolumes={ambienceVolumes}
+        onSetVolume={setAmbienceVolume}
+        crackleEnabled={crackleEnabled}
+        onToggleCrackle={toggleCrackle}
+      />
+
+      {/* Gatefold Record Jacket Liner Notes Modal */}
+      <GatefoldModal
+        album={gatefoldAlbum}
+        isOpen={Boolean(gatefoldAlbum)}
+        onClose={() => setGatefoldAlbum(null)}
+        onPlayTrack={handlePlayTrack}
+        currentTrackId={currentTrack?.id}
+        isPlaying={isPlaying}
+      />
+
+      {/* Custom Vinyl Pressing / Mixtape Studio */}
+      <MixtapeModal
+        tracks={tracks}
+        isOpen={isMixtapeOpen}
+        onClose={() => setIsMixtapeOpen(false)}
+        onCreateMixtape={createMixtapeAlbum}
+      />
+
+      {/* Fullscreen Zen Listening Lounge */}
+      <ZenTurntableModal
+        isOpen={isZenModeOpen}
+        onClose={() => setIsZenModeOpen(false)}
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        isLoading={isLoading}
+        position={position}
+        duration={duration}
+        volume={volume}
+        shuffle={shuffle}
+        repeatMode={repeatMode}
+        rpmSpeed={rpmSpeed}
+        vinylStyle={vinylStyle}
+        tubeWarmthEnabled={tubeWarmthEnabled}
+        onTogglePlayPause={togglePlayPause}
+        onStop={stop}
+        onNext={next}
+        onPrevious={previous}
+        onSkipForward={skipForward}
+        onSkipBackward={skipBackward}
+        onSeek={seekTo}
+        onToggleShuffle={toggleShuffle}
+        onCycleRepeat={cycleRepeatMode}
+        onSetVolume={setVolume}
+        onSetRpmSpeed={setRpmSpeed}
+        onSetVinylStyle={setVinylStyle}
+        onToggleTubeWarmth={() => setTubeWarmth(!tubeWarmthEnabled)}
+        onNeedleSeek={needleSeek}
+      />
     </div>
   )
 }

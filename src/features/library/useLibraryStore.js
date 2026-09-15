@@ -175,6 +175,19 @@ export const useLibraryStore = create((set, get) => ({
     await db.tracks.delete(trackId)
   },
 
+  async createMixtapeAlbum(albumTitle, artist, trackIds, mood = 'Cozy Cafe') {
+    const { tracks } = get()
+    const selectedTracks = tracks.filter((t) => trackIds.includes(t.id))
+    const updatedTracks = selectedTracks.map((t, idx) => ({
+      ...t,
+      album: albumTitle,
+      artist: artist || t.artist,
+      trackNumber: idx + 1,
+      genre: mood,
+    }))
+    await get()._mergeAndPersist(updatedTracks)
+  },
+
   setSelectedCategory(categoryId) {
     set({ selectedCategoryId: categoryId })
   },

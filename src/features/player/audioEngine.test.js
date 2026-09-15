@@ -136,4 +136,24 @@ describe('AudioEngine', () => {
     engine.setCrackleEnabled(false)
     expect(engine.crackleSource).toBeNull()
   })
+
+  it('adjusts playback rate for 45 and 78 RPM speeds', async () => {
+    await engine.loadTrack(makeFakeFile())
+    engine.setPlaybackRate(1.35)
+    expect(engine.playbackRate).toBe(1.35)
+    engine.play()
+    expect(engine.source.playbackRate.value).toBe(1.35)
+  })
+
+  it('toggles tube warmth filter without throwing', () => {
+    engine.ensureContext()
+    engine.setTubeWarmth(true)
+    expect(engine.tubeWarmthEnabled).toBe(true)
+    engine.setTubeWarmth(false)
+    expect(engine.tubeWarmthEnabled).toBe(false)
+  })
+
+  it('plays needle drop effect without throwing', () => {
+    expect(() => engine.playNeedleDropEffect()).not.toThrow()
+  })
 })

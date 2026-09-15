@@ -133,4 +133,23 @@ describe('useLibraryStore', () => {
     expect(useLibraryStore.getState().tracks).toHaveLength(0)
     expect(db.tracks.delete).toHaveBeenCalledWith('youtube:toremove')
   })
+
+  it('createMixtapeAlbum groups selected tracks under a custom album title and genre', async () => {
+    await useLibraryStore.getState().addYouTubeAlbum('Singles', 'Artist', [
+      { videoId: 'm1', title: 'Mixtape Song 1' },
+      { videoId: 'm2', title: 'Mixtape Song 2' },
+    ])
+    await useLibraryStore
+      .getState()
+      .createMixtapeAlbum(
+        'Rainy Day Sessions',
+        'Curator Me',
+        ['youtube:m1', 'youtube:m2'],
+        'Rainy Days',
+      )
+    const { tracks } = useLibraryStore.getState()
+    expect(tracks[0].album).toBe('Rainy Day Sessions')
+    expect(tracks[0].genre).toBe('Rainy Days')
+    expect(tracks[1].album).toBe('Rainy Day Sessions')
+  })
 })
