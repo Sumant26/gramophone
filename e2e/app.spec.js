@@ -24,11 +24,16 @@ test.describe('Gramophone shell', () => {
     await expect(page.getByRole('button', { name: 'Next track' })).toBeDisabled()
   })
 
-  test('search input accepts typed text', async ({ page }) => {
+  test('single unified search input accepts typed text and searches both local records and YouTube', async ({
+    page,
+  }) => {
     await page.goto('/')
-    const search = page.getByLabel('Search your library')
-    await search.fill('lofi')
-    await expect(search).toHaveValue('lofi')
+    const search = page.getByRole('searchbox')
+    await expect(search).toBeVisible()
+    await search.fill('lofi beats')
+    await expect(search).toHaveValue('lofi beats')
+    await expect(page.getByText(/^Added Records \(/)).toBeVisible()
+    await expect(page.getByText(/^YouTube Recommendations \(/)).toBeVisible()
   })
 
   test('volume knob is keyboard operable', async ({ page }) => {
@@ -41,28 +46,8 @@ test.describe('Gramophone shell', () => {
     expect(Number(after)).toBeGreaterThan(Number(before))
   })
 
-  test('switching to the YouTube tab shows its search box and a missing-API-key message', async ({
-    page,
-  }) => {
+  test('the YouTube player stays attached in the DOM', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('tab', { name: /YouTube/ }).click()
-    const search = page.getByLabel('Search YouTube')
-    await expect(search).toBeVisible()
-    await search.fill('lofi beats')
-    // No VITE_YOUTUBE_API_KEY is configured in this environment, so the
-    // store should surface its friendly, actionable error rather than an
-    // unhandled rejection.
-    await expect(page.getByRole('alert')).toContainText('VITE_YOUTUBE_API_KEY')
-  })
-
-  test('the YouTube player stays attached in the DOM regardless of the active library tab', async ({
-    page,
-  }) => {
-    await page.goto('/')
-    await expect(page.getByTestId('youtube-mount')).toBeAttached()
-    await page.getByRole('tab', { name: /YouTube/ }).click()
-    await expect(page.getByTestId('youtube-mount')).toBeAttached()
-    await page.getByRole('tab', { name: /My Records|My Library/ }).click()
     await expect(page.getByTestId('youtube-mount')).toBeAttached()
   })
 
