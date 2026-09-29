@@ -16,6 +16,17 @@
 
 const CROSSFADE_SECONDS = 0.05
 
+function createDiaphragmSaturationCurve(amount = 2.0) {
+  const n_samples = 1024
+  const curve = new Float32Array(n_samples)
+  for (let i = 0; i < n_samples; i++) {
+    const x = (i * 2) / n_samples - 1
+    // Smooth non-linear soft-saturation modeling mechanical mica diaphragm flex
+    curve[i] = Math.tanh(amount * x) / Math.tanh(amount)
+  }
+  return curve
+}
+
 export class AudioEngine {
   /** @param {{ onEnded?: () => void, onError?: (err: Error) => void }} [handlers] */
   constructor(handlers = {}) {
@@ -41,7 +52,15 @@ export class AudioEngine {
     this.crackleEnabled = false
     this.playbackRate = 1.0
     this.tubeWarmthEnabled = false
+    this.gramophoneModeEnabled = true // Authentic 1920s Gramophone Acoustic Horn Sound active by default
 
+    // Gramophone Acoustic Horn Filters
+    this.gramophoneHighpass = null
+    this.gramophoneHornResonance = null
+    this.gramophoneLowpass = null
+    this.gramophoneSaturation = null
+
+    // Vacuum Tube Warmth Filters
     this.warmthFilter = null
     this.bassWarmthFilter = null
   }
@@ -60,7 +79,32 @@ export class AudioEngine {
     this.analyser = this.context.createAnalyser()
     this.analyser.fftSize = 2048
 
-    // Vintage Tube warmth filters (biquad lowpass warmth + subtle low-shelf boost)
+    // 1. Gramophone Acoustic Horn Highpass Filter (cuts modern sub-bass rumble < 280Hz)
+    this.gramophoneHighpass = this.context.createBiquadFilter()
+    this.gramophoneHighpass.type = 'highpass'
+    this.gramophoneHighpass.frequency.value = this.gramophoneModeEnabled ? 280 : 20
+    this.gramophoneHighpass.Q.value = 0.85
+
+    // 2. Brass/Wood Acoustic Horn Formant Resonance (iconic morning-glory horn peak at 1.85kHz)
+    this.gramophoneHornResonance = this.context.createBiquadFilter()
+    this.gramophoneHornResonance.type = 'peaking'
+    this.gramophoneHornResonance.frequency.value = 1850
+    this.gramophoneHornResonance.Q.value = 1.4
+    this.gramophoneHornResonance.gain.value = this.gramophoneModeEnabled ? 6.5 : 0
+
+    // 3. Shellac 78 RPM Top-End Roll-off (vintage physical mechanical cutoff at 4.2kHz)
+    this.gramophoneLowpass = this.context.createBiquadFilter()
+    this.gramophoneLowpass.type = 'lowpass'
+    this.gramophoneLowpass.frequency.value = this.gramophoneModeEnabled ? 4200 : 20000
+    this.gramophoneLowpass.Q.value = 1.0
+
+    // 4. Mica Diaphragm Saturation (WaveShaper for vintage mechanical needle harmonic distortion)
+    this.gramophoneSaturation = this.context.createWaveShaper()
+    if (this.gramophoneModeEnabled) {
+      this.gramophoneSaturation.curve = createDiaphragmSaturationCurve(1.8)
+    }
+
+    // 5. Vintage Tube warmth filters (biquad lowpass warmth + subtle low-shelf boost)
     this.warmthFilter = this.context.createBiquadFilter()
     this.warmthFilter.type = 'lowpass'
     this.warmthFilter.frequency.value = this.tubeWarmthEnabled ? 4800 : 20000
@@ -71,7 +115,13 @@ export class AudioEngine {
     this.bassWarmthFilter.frequency.value = 140
     this.bassWarmthFilter.gain.value = this.tubeWarmthEnabled ? 3.5 : 0
 
-    this.trackGain.connect(this.warmthFilter)
+    // Connect DSP Chain:
+    // trackGain -> gramophoneHighpass -> gramophoneHornResonance -> gramophoneLowpass -> gramophoneSaturation -> warmthFilter -> bassWarmthFilter -> analyser -> masterGain
+    this.trackGain.connect(this.gramophoneHighpass)
+    this.gramophoneHighpass.connect(this.gramophoneHornResonance)
+    this.gramophoneHornResonance.connect(this.gramophoneLowpass)
+    this.gramophoneLowpass.connect(this.gramophoneSaturation)
+    this.gramophoneSaturation.connect(this.warmthFilter)
     this.warmthFilter.connect(this.bassWarmthFilter)
     this.bassWarmthFilter.connect(this.analyser)
     this.analyser.connect(this.masterGain)
@@ -182,6 +232,47 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Toggle authentic 1920s Gramophone Acoustic Horn DSP processing.
+   * When enabled, applies acoustic horn highpass, horn formant resonance,
+   * shellac 78 RPM cutoff, and mica diaphragm saturation.
+   */
+  setGramophoneMode(enabled) {
+    this.gramophoneModeEnabled = enabled
+    if (!this.context) return
+    const now = this.context.currentTime
+
+    if (this.gramophoneHighpass) {
+      this.gramophoneHighpass.frequency.cancelScheduledValues(now)
+      this.gramophoneHighpass.frequency.linearRampToValueAtTime(
+        enabled ? 280 : 20,
+        now + CROSSFADE_SECONDS,
+      )
+    }
+
+    if (this.gramophoneHornResonance) {
+      this.gramophoneHornResonance.gain.cancelScheduledValues(now)
+      this.gramophoneHornResonance.gain.linearRampToValueAtTime(
+        enabled ? 6.5 : 0,
+        now + CROSSFADE_SECONDS,
+      )
+    }
+
+    if (this.gramophoneLowpass) {
+      this.gramophoneLowpass.frequency.cancelScheduledValues(now)
+      this.gramophoneLowpass.frequency.linearRampToValueAtTime(
+        enabled ? 4200 : 20000,
+        now + CROSSFADE_SECONDS,
+      )
+    }
+
+    if (this.gramophoneSaturation) {
+      this.gramophoneSaturation.curve = enabled
+        ? createDiaphragmSaturationCurve(1.8)
+        : null
+    }
+  }
+
   setTubeWarmth(enabled) {
     this.tubeWarmthEnabled = enabled
     if (!this.context) return
@@ -272,18 +363,24 @@ export class AudioEngine {
     this.source = null
   }
 
-  /** Synthesizes a soft vinyl-crackle ambience: filtered white noise with a slow gain fade-in, since we can't ship a licensed sample. */
+  /** Synthesizes authentic vintage shellac groove noise: filtered groove friction, periodic needle rotation whoosh, and sparse dust pops. */
   _startCrackle() {
     if (!this.context || this.crackleSource) return
     const ctx = this.context
-    const bufferSeconds = 2
+    const bufferSeconds = 3
     const buffer = ctx.createBuffer(1, ctx.sampleRate * bufferSeconds, ctx.sampleRate)
     const data = buffer.getChannelData(0)
+    const period = ctx.sampleRate / 1.3 // ~78 RPM period for subtle rhythmic groove whoosh
+
     for (let i = 0; i < data.length; i++) {
-      // Sparse random pops + a low noise floor approximate vinyl crackle.
-      const pop = Math.random() < 0.0015 ? (Math.random() * 2 - 1) * 0.6 : 0
-      const floor = (Math.random() * 2 - 1) * 0.02
-      data[i] = pop + floor
+      // Periodic rotation whoosh
+      const phase = (i % period) / period
+      const rhythmicWhoosh = Math.sin(phase * Math.PI * 2) * 0.008
+
+      // Sparse random shellac crackle pops + continuous fine groove hiss
+      const pop = Math.random() < 0.002 ? (Math.random() * 2 - 1) * 0.55 : 0
+      const floor = (Math.random() * 2 - 1) * 0.025
+      data[i] = pop + floor + rhythmicWhoosh
     }
 
     const source = ctx.createBufferSource()
@@ -295,7 +392,7 @@ export class AudioEngine {
     this.crackleGain.gain.cancelScheduledValues(ctx.currentTime)
     this.crackleGain.gain.setValueAtTime(0, ctx.currentTime)
     this.crackleGain.gain.linearRampToValueAtTime(
-      0.15,
+      0.16,
       ctx.currentTime + CROSSFADE_SECONDS,
     )
 

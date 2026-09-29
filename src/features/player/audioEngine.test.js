@@ -153,6 +153,14 @@ describe('AudioEngine', () => {
     expect(engine.tubeWarmthEnabled).toBe(false)
   })
 
+  it('toggles gramophone acoustic horn mode without throwing', () => {
+    engine.ensureContext()
+    engine.setGramophoneMode(true)
+    expect(engine.gramophoneModeEnabled).toBe(true)
+    engine.setGramophoneMode(false)
+    expect(engine.gramophoneModeEnabled).toBe(false)
+  })
+
   it('plays needle drop effect without throwing', () => {
     expect(() => engine.playNeedleDropEffect()).not.toThrow()
   })

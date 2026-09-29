@@ -22,4 +22,24 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled()
   })
+
+  it('renders the single unified search bar and shows added records and YouTube recommendations sections when searching', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    render(<App />)
+    const searchInput = screen.getByRole('searchbox', {
+      name: /Search records and YouTube/i,
+    })
+    expect(searchInput).toBeInTheDocument()
+
+    await userEvent.type(searchInput, 'vintage jazz')
+    expect(await screen.findByText(/^Added Records \(/)).toBeInTheDocument()
+    expect(await screen.findByText(/^YouTube Recommendations \(/)).toBeInTheDocument()
+  })
+
+  it('renders the Gramophone Sound mode toggle on the turntable deck', () => {
+    render(<App />)
+    expect(
+      screen.getByRole('button', { name: /Gramophone Sound/i }),
+    ).toBeInTheDocument()
+  })
 })

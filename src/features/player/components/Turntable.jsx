@@ -2,13 +2,14 @@ import { useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { VacuumTube } from './VacuumTube'
+import { Icon } from '@/shared/components/Icon'
 
 /**
  * The visual centerpiece: a spinning record with album art at its center,
  * interactive vinyl grooves that allow clicking to drop the needle at any track point,
  * an authentic vintage tonearm with an angled pin handle (finger-lift),
  * tactile RPM speed selector (33 ⅓, 45, 78), custom vinyl finish shaders,
- * and a mounted glowing vacuum tube amp.
+ * Gramophone Acoustic Horn mode toggle, and a mounted glowing vacuum tube amp.
  */
 export function Turntable({
   isPlaying,
@@ -18,11 +19,13 @@ export function Turntable({
   rpmSpeed = 33,
   vinylStyle = 'black',
   tubeWarmthEnabled = false,
+  gramophoneModeEnabled = true,
   onTogglePlayPause,
   onNeedleSeek,
   onSetRpmSpeed,
   onSetVinylStyle,
   onToggleTubeWarmth,
+  onToggleGramophoneMode,
 }) {
   const platterRef = useRef(null)
 
@@ -269,6 +272,29 @@ export function Turntable({
             ))}
           </div>
         </div>
+
+        {/* Gramophone Acoustic Horn Sound Toggle */}
+        {onToggleGramophoneMode && (
+          <button
+            type="button"
+            aria-pressed={gramophoneModeEnabled}
+            onClick={onToggleGramophoneMode}
+            title={
+              gramophoneModeEnabled
+                ? 'Gramophone Acoustic Horn active (1920s brass horn resonance & shellac warmth)'
+                : 'Click to enable authentic 1920s Gramophone Acoustic Horn sound'
+            }
+            className={clsx(
+              'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold border transition-all shadow-xs',
+              gramophoneModeEnabled
+                ? 'border-cozy-brass bg-cozy-brass text-cozy-on-accent shadow-sm'
+                : 'border-cozy-brass/30 bg-cozy-surface text-cozy-ink-muted hover:text-cozy-ink hover:border-cozy-brass/60',
+            )}
+          >
+            <Icon name="horn" size={12} />
+            <span>Gramophone Sound</span>
+          </button>
+        )}
 
         {/* Vinyl Finish Picker */}
         {onSetVinylStyle && (

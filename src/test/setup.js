@@ -54,6 +54,13 @@ class MockOscillatorNode {
   stop = vi.fn()
 }
 
+class MockWaveShaperNode {
+  curve = null
+  oversample = 'none'
+  connect = vi.fn()
+  disconnect = vi.fn()
+}
+
 class MockAudioBufferSourceNode {
   buffer = null
   loop = false
@@ -75,6 +82,7 @@ class MockAudioContext {
   createBiquadFilter = vi.fn(() => new MockBiquadFilterNode())
   createOscillator = vi.fn(() => new MockOscillatorNode())
   createBufferSource = vi.fn(() => new MockAudioBufferSourceNode())
+  createWaveShaper = vi.fn(() => new MockWaveShaperNode())
   createBuffer = vi.fn((channels, length) => ({
     numberOfChannels: channels,
     length,

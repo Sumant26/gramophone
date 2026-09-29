@@ -26,6 +26,7 @@ export function ZenTurntableModal({
   rpmSpeed = 33,
   vinylStyle = 'black',
   tubeWarmthEnabled = false,
+  gramophoneModeEnabled = true,
   onTogglePlayPause,
   onStop,
   onNext,
@@ -39,6 +40,7 @@ export function ZenTurntableModal({
   onSetRpmSpeed,
   onSetVinylStyle,
   onToggleTubeWarmth,
+  onToggleGramophoneMode,
   onNeedleSeek,
 }) {
   useEffect(() => {
@@ -95,11 +97,13 @@ export function ZenTurntableModal({
             rpmSpeed={rpmSpeed}
             vinylStyle={vinylStyle}
             tubeWarmthEnabled={tubeWarmthEnabled}
+            gramophoneModeEnabled={gramophoneModeEnabled}
             onTogglePlayPause={onTogglePlayPause}
             onNeedleSeek={onNeedleSeek}
             onSetRpmSpeed={onSetRpmSpeed}
             onSetVinylStyle={onSetVinylStyle}
             onToggleTubeWarmth={onToggleTubeWarmth}
+            onToggleGramophoneMode={onToggleGramophoneMode}
           />
 
           {/* Floating Track Info */}

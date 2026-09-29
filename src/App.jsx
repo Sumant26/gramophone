@@ -57,7 +57,6 @@ function App() {
   const [isAmbienceOpen, setIsAmbienceOpen] = useState(false)
   const [gatefoldAlbum, setGatefoldAlbum] = useState(null)
   const [isMixtapeOpen, setIsMixtapeOpen] = useState(false)
-  const [libraryTab, setLibraryTab] = useState('local') // 'local' | 'youtube'
   const [libraryViewMode, setLibraryViewMode] = useState('crates') // 'crates' | 'list'
 
   const {
@@ -75,6 +74,7 @@ function App() {
     rpmSpeed,
     vinylStyle,
     tubeWarmthEnabled,
+    gramophoneModeEnabled,
     ambienceVolumes,
     theme,
     isZenModeOpen,
@@ -95,6 +95,7 @@ function App() {
     setRpmSpeed,
     setVinylStyle,
     setTubeWarmth,
+    setGramophoneMode,
     setAmbienceVolume,
     setTheme,
     setIsZenModeOpen,
@@ -133,6 +134,15 @@ function App() {
     loadFromDb()
   }, [loadFromDb])
 
+  // Single unified search handler: synchronizes local and YouTube search
+  const handleSearchChange = useCallback(
+    (query) => {
+      setSearchQuery(query)
+      setYouTubeQuery(query)
+    },
+    [setSearchQuery, setYouTubeQuery],
+  )
+
   // Keep `position` (and the sleep timer) in sync with the real audio clock
   useEffect(() => {
     let frame
@@ -164,8 +174,6 @@ function App() {
     (_result, indexInResults) => {
       setIsQueueOpen(false)
       playQueue(youtubeResults.map(toQueueTrack), indexInResults)
-      // Auto-switch to My Records so user immediately sees their record spinning on the gramophone
-      setLibraryTab('local')
     },
     [playQueue, youtubeResults],
   )
@@ -297,9 +305,9 @@ function App() {
           </Button>
         </div>
 
-        {/* Center / Full-width on mobile: Search Bar */}
+        {/* Center / Full-width on mobile: Single Unified Search Bar */}
         <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-xs md:max-w-md min-w-0">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          <SearchBar value={searchQuery} onChange={handleSearchChange} />
         </div>
       </header>
 
@@ -313,7 +321,7 @@ function App() {
               'linear-gradient(165deg, var(--color-cozy-wood), var(--color-cozy-wood-dark) 85%)',
           }}
         >
-          {/* Turntable Platter (Prominent, interactive, RPM + styles + tube) */}
+          {/* Turntable Platter (Prominent, interactive, RPM + styles + tube + gramophone horn) */}
           <div className="w-full max-w-[360px] sm:max-w-[400px] xl:max-w-[440px] 2xl:max-w-[480px] mx-auto shrink-0">
             <Turntable
               isPlaying={isPlaying}
@@ -323,11 +331,13 @@ function App() {
               rpmSpeed={rpmSpeed}
               vinylStyle={vinylStyle}
               tubeWarmthEnabled={tubeWarmthEnabled}
+              gramophoneModeEnabled={gramophoneModeEnabled}
               onTogglePlayPause={togglePlayPause}
               onNeedleSeek={needleSeek}
               onSetRpmSpeed={setRpmSpeed}
               onSetVinylStyle={setVinylStyle}
               onToggleTubeWarmth={() => setTubeWarmth(!tubeWarmthEnabled)}
+              onToggleGramophoneMode={() => setGramophoneMode(!gramophoneModeEnabled)}
             />
           </div>
 
@@ -375,85 +385,147 @@ function App() {
         >
           {/* Header Controls */}
           <div className="mb-3 flex flex-none flex-wrap items-center justify-between gap-3">
-            <div
-              role="tablist"
-              aria-label="Music source"
-              className="flex w-fit gap-1 rounded-full bg-cozy-surface p-1 shadow-sm border border-cozy-brass/20"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={libraryTab === 'local'}
-                onClick={() => setLibraryTab('local')}
-                className={clsx(
-                  'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-colors',
-                  libraryTab === 'local'
-                    ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
-                    : 'text-cozy-ink-muted hover:text-cozy-ink',
-                )}
-              >
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full bg-cozy-surface px-4 py-1.5 text-sm font-semibold text-cozy-accent shadow-sm border border-cozy-brass/20">
                 <Icon name="folder" size={14} />
-                My Records ({tracks.length})
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={libraryTab === 'youtube'}
-                onClick={() => setLibraryTab('youtube')}
-                className={clsx(
-                  'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-colors',
-                  libraryTab === 'youtube'
-                    ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
-                    : 'text-cozy-ink-muted hover:text-cozy-ink',
-                )}
-              >
-                <Icon name="broadcast" size={14} />
-                YouTube Search
-              </button>
+                <span>My Records ({tracks.length})</span>
+              </div>
+              {searchQuery.trim() && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange('')}
+                  className="flex items-center gap-1 rounded-full border border-cozy-brass/30 bg-cozy-surface-2 px-3 py-1 text-xs text-cozy-ink-muted hover:text-cozy-ink transition-colors"
+                >
+                  <Icon name="close" size={12} />
+                  <span>Clear Search</span>
+                </button>
+              )}
             </div>
 
-            {/* View Mode Toggle for Local Records */}
-            {libraryTab === 'local' && (
-              <div className="flex items-center gap-1 rounded-full bg-cozy-surface p-1 border border-cozy-brass/20 shadow-sm">
-                <button
-                  type="button"
-                  title="Vinyl Records View"
-                  aria-label="Vinyl records view"
-                  aria-pressed={libraryViewMode === 'crates'}
-                  onClick={() => setLibraryViewMode('crates')}
-                  className={clsx(
-                    'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors',
-                    libraryViewMode === 'crates'
-                      ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
-                      : 'text-cozy-ink-muted hover:text-cozy-ink',
-                  )}
-                >
-                  <Icon name="vinylDrop" size={13} />
-                  <span>Albums</span>
-                </button>
-                <button
-                  type="button"
-                  title="Song List View"
-                  aria-label="Song list view"
-                  aria-pressed={libraryViewMode === 'list'}
-                  onClick={() => setLibraryViewMode('list')}
-                  className={clsx(
-                    'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors',
-                    libraryViewMode === 'list'
-                      ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
-                      : 'text-cozy-ink-muted hover:text-cozy-ink',
-                  )}
-                >
-                  <Icon name="queue" size={13} />
-                  <span>Songs</span>
-                </button>
-              </div>
-            )}
+            {/* View Mode Toggle for Records */}
+            <div className="flex items-center gap-1 rounded-full bg-cozy-surface p-1 border border-cozy-brass/20 shadow-sm">
+              <button
+                type="button"
+                title="Vinyl Records View"
+                aria-label="Vinyl records view"
+                aria-pressed={libraryViewMode === 'crates'}
+                onClick={() => setLibraryViewMode('crates')}
+                className={clsx(
+                  'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors',
+                  libraryViewMode === 'crates'
+                    ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
+                    : 'text-cozy-ink-muted hover:text-cozy-ink',
+                )}
+              >
+                <Icon name="vinylDrop" size={13} />
+                <span>Albums</span>
+              </button>
+              <button
+                type="button"
+                title="Song List View"
+                aria-label="Song list view"
+                aria-pressed={libraryViewMode === 'list'}
+                onClick={() => setLibraryViewMode('list')}
+                className={clsx(
+                  'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors',
+                  libraryViewMode === 'list'
+                    ? 'bg-cozy-brass/20 font-semibold text-cozy-accent'
+                    : 'text-cozy-ink-muted hover:text-cozy-ink',
+                )}
+              >
+                <Icon name="queue" size={13} />
+                <span>Songs</span>
+              </button>
+            </div>
           </div>
 
-          {/* Internally Scrollable Records / YouTube Panel */}
+          {/* Internally Scrollable Records & Unified Search View */}
           <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-            {libraryTab === 'local' ? (
+            {searchQuery.trim() ? (
+              /* Unified Search Results: 1. Added Files, 2. YouTube Recommendations */
+              <div className="flex flex-col gap-6 pb-4">
+                {/* 1. Added Records / Files matching search */}
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between border-b border-cozy-brass/20 pb-1.5">
+                    <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cozy-brass-light">
+                      <Icon name="disc" size={14} />
+                      Added Records ({visibleTracks.length})
+                    </span>
+                    <span className="text-[11px] text-cozy-ink-muted">
+                      From your local collection
+                    </span>
+                  </div>
+
+                  {visibleTracks.length > 0 ? (
+                    <div>
+                      {libraryViewMode === 'crates' ? (
+                        <AlbumCrateView
+                          tracks={visibleTracks}
+                          currentTrackId={currentTrack?.id}
+                          isPlaying={isPlaying}
+                          onPlayTrack={handlePlayTrack}
+                          onToggleFavorite={toggleFavorite}
+                          onRemoveTrack={removeTrack}
+                          onOpenGatefold={(album) => setGatefoldAlbum(album)}
+                          onOpenMixtape={() => setIsMixtapeOpen(true)}
+                        />
+                      ) : (
+                        <div className="rounded-2xl bg-cozy-surface p-3 shadow-md border border-cozy-brass/20">
+                          <TrackList
+                            tracks={visibleTracks}
+                            currentTrackId={currentTrack?.id}
+                            isPlaying={isPlaying}
+                            onPlayTrack={handlePlayTrack}
+                            onToggleFavorite={toggleFavorite}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl bg-cozy-surface/70 border border-dashed border-cozy-brass/30 p-4 text-center">
+                      <p className="text-sm font-medium text-cozy-ink">
+                        No added records match “{searchQuery}”.
+                      </p>
+                      <p className="text-xs text-cozy-ink-muted mt-1">
+                        Explore YouTube recommendations below to stream or add them to
+                        your Record Crate.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. YouTube Recommendations matching search */}
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between border-b border-cozy-brass/20 pb-1.5">
+                    <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cozy-brass-light">
+                      <Icon name="broadcast" size={14} />
+                      YouTube Recommendations ({youtubeResults.length})
+                    </span>
+                    <span className="text-[11px] text-cozy-ink-muted">
+                      Stream directly or save to Crate
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl bg-cozy-surface p-4 shadow-md border border-cozy-brass/20">
+                    <YouTubeSearchPanel
+                      query={youtubeQuery}
+                      results={youtubeResults}
+                      isSearching={isSearchingYouTube}
+                      errorMessage={youtubeErrorMessage}
+                      currentTrackId={currentTrack?.id}
+                      isPlaying={isPlaying}
+                      onQueryChange={handleSearchChange}
+                      onPlayResult={handlePlayYouTubeResult}
+                      onAddTrack={handleAddYouTubeTrackToLibrary}
+                      onAddAlbum={addYouTubeAlbum}
+                      savedTrackIds={savedTrackIds}
+                      hideSearchInput={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Normal Collection Browsing */
               <div className="flex flex-col gap-3">
                 <CategoryRail
                   categories={categories}
@@ -484,22 +556,6 @@ function App() {
                     </div>
                   )}
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-cozy-surface p-4 shadow-md border border-cozy-brass/20">
-                <YouTubeSearchPanel
-                  query={youtubeQuery}
-                  results={youtubeResults}
-                  isSearching={isSearchingYouTube}
-                  errorMessage={youtubeErrorMessage}
-                  currentTrackId={currentTrack?.id}
-                  isPlaying={isPlaying}
-                  onQueryChange={setYouTubeQuery}
-                  onPlayResult={handlePlayYouTubeResult}
-                  onAddTrack={handleAddYouTubeTrackToLibrary}
-                  onAddAlbum={addYouTubeAlbum}
-                  savedTrackIds={savedTrackIds}
-                />
               </div>
             )}
           </div>
@@ -549,6 +605,7 @@ function App() {
         rpmSpeed={rpmSpeed}
         vinylStyle={vinylStyle}
         tubeWarmthEnabled={tubeWarmthEnabled}
+        gramophoneModeEnabled={gramophoneModeEnabled}
         onTogglePlayPause={togglePlayPause}
         onStop={stop}
         onNext={next}
@@ -562,6 +619,7 @@ function App() {
         onSetRpmSpeed={setRpmSpeed}
         onSetVinylStyle={setVinylStyle}
         onToggleTubeWarmth={() => setTubeWarmth(!tubeWarmthEnabled)}
+        onToggleGramophoneMode={() => setGramophoneMode(!gramophoneModeEnabled)}
         onNeedleSeek={needleSeek}
       />
     </div>

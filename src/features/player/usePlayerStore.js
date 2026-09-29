@@ -59,6 +59,7 @@ export const usePlayerStore = create((set, get) => {
     rpmSpeed: 33, // 33 | 45 | 78
     vinylStyle: 'black', // 'black' | 'amber' | 'marble'
     tubeWarmthEnabled: false,
+    gramophoneModeEnabled: true, // Authentic vintage gramophone acoustic horn sound
     ambienceVolumes: {
       rain: 0,
       fire: 0,
@@ -267,6 +268,11 @@ export const usePlayerStore = create((set, get) => {
     setTubeWarmth(enabled) {
       localEngine.setTubeWarmth(enabled)
       set({ tubeWarmthEnabled: enabled })
+    },
+
+    setGramophoneMode(enabled) {
+      localEngine.setGramophoneMode(enabled)
+      set({ gramophoneModeEnabled: enabled })
     },
 
     setAmbienceVolume(layer, volume) {

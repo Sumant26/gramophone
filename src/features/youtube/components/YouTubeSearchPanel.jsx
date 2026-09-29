@@ -19,6 +19,7 @@ export function YouTubeSearchPanel({
   onAddTrack,
   onAddAlbum,
   savedTrackIds = new Set(),
+  hideSearchInput = false,
 }) {
   const [isResultsHidden, setIsResultsHidden] = useState(false)
   const [albumAddedNotification, setAlbumAddedNotification] = useState(null)
@@ -49,33 +50,35 @@ export function YouTubeSearchPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 rounded-full border border-cozy-brass/40 bg-cozy-surface-2 px-3 py-1.5 shadow-sm">
-        <Icon name="search" size={16} />
-        <input
-          type="search"
-          aria-label="Search YouTube"
-          placeholder="Search YouTube for albums, artists, tracks…"
-          value={query}
-          onChange={(e) => {
-            setIsResultsHidden(false)
-            onQueryChange(e.target.value)
-          }}
-          className="w-full bg-transparent text-sm text-cozy-ink placeholder:text-cozy-ink-muted focus:outline-none"
-        />
-        {query && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => {
+      {!hideSearchInput && (
+        <div className="flex items-center gap-2 rounded-full border border-cozy-brass/40 bg-cozy-surface-2 px-3 py-1.5 shadow-sm">
+          <Icon name="search" size={16} />
+          <input
+            type="search"
+            aria-label="Search YouTube"
+            placeholder="Search YouTube for albums, artists, tracks…"
+            value={query}
+            onChange={(e) => {
               setIsResultsHidden(false)
-              onQueryChange('')
+              onQueryChange(e.target.value)
             }}
-            className="rounded-full p-0.5 text-cozy-ink-muted hover:text-cozy-ink"
-          >
-            <Icon name="close" size={14} />
-          </button>
-        )}
-      </div>
+            className="w-full bg-transparent text-sm text-cozy-ink placeholder:text-cozy-ink-muted focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setIsResultsHidden(false)
+                onQueryChange('')
+              }}
+              className="rounded-full p-0.5 text-cozy-ink-muted hover:text-cozy-ink"
+            >
+              <Icon name="close" size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {albumAddedNotification && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-cozy-brass/40 bg-cozy-brass/15 px-3 py-2 text-xs font-medium text-cozy-brass-light animate-in fade-in slide-in-from-top-1">
