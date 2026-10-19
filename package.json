@@ -31,7 +31,7 @@
     "dexie": "^4.4.6",
     "framer-motion": "^13.2.0",
     "jsmediatags": "^3.9.7",
-    "react": "^19.2.8",
+    "react": "^19.3.1",
     "react-dom": "^19.2.8",
     "zustand": "^5.0.15"
   },
