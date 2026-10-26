@@ -33,7 +33,7 @@
     "jsmediatags": "^3.9.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
